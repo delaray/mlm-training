@@ -1,32 +1,25 @@
 import os
-import itertools
 import pickle
-import datetime
 import argparse
 import logging
 from datetime import date, datetime
-from itertools import chain
-from typing import List, Union
+from typing import Union
 import matplotlib.pyplot as plt
 
 import torch
 from datasets import Dataset
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from transformers import Trainer, TrainingArguments
 from transformers import DataCollatorForLanguageModeling
 from transformers import logging as transformers_logging
 
-from mlm.src.preprocess_data import group_texts
-from mlm.src.document_ingest import DocumentIngest, read_files_directory
-from mlm.src.document_ingest import flatten_chunks
+from src.ingest import read_files_directory
 
-# ------------------------------------------------------------------------------
 
+# ----------------------------------------------------------------------------
 # Global Defaults & Settings
-
-# ------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
 DEFAULT_DATA_DIR = 'data'
 DEFAULT_RESULTS_DIR = 'results'
@@ -112,9 +105,10 @@ def tokenize_function(examples, tokenizer=DEFAULT_TOKENIZER):
                      return_overflowing_tokens=True)
 
 
-def prepare_datasets(data_path=DEFAULT_DATA_DIR, max_chunks: Union[int | None] = None) -> dict:
+def prepare_datasets(data_path=DEFAULT_DATA_DIR, 
+                     max_chunks: Union[int | None] = None) -> dict:
 
-    data_prep_start_time = datetime.now()
+    prep_start_time = datetime.now()
     logging.info("Preparing data sets")
 
     # Load data
@@ -142,9 +136,9 @@ def prepare_datasets(data_path=DEFAULT_DATA_DIR, max_chunks: Union[int | None] =
         logging.info(f"{len(lm_datasets['train'])} will be used for training")
 
         # Log total data preparation time
-        data_prep_end_time = datetime.now()
+        prep_end_time = datetime.now()
         logging.info(
-            f"Data preparation took {data_prep_end_time - data_prep_start_time}")
+            f"Data preparation took {prep_end_time - prep_start_time}")
 
         return lm_datasets, chunks
 
@@ -341,19 +335,19 @@ parser.add_argument('name', metavar='name', type=str,
                     help='The name of the model to train.')
 
 parser.add_argument('--chunks', metavar='chunks', type=int, default=None,
-                    help='The number of chunks to use or all chunks if unspecified.')
+                    help='The number of chunks or all chunks if unspecified.')
 
 parser.add_argument('--epochs', metavar='epochs', type=int, default=20,
-                    help='The number of epochs to use for training. Default is 20.')
+                    help='The number of epochs for training. Default is 20.')
 
 parser.add_argument('--rate', metavar='rate', type=float, default=4e-5,
-                    help='The training rate to use during training. The default is 4e-5.')
+                    help='Training rate for training, default is 4e-5.')
 
 parser.add_argument('--decay', metavar='decay', type=float, default=0.002,
-                    help='The weight decay to use during training. The default is 0.002.')
+                    help='Weight decay for training, default is 0.002.')
 
 parser.add_argument('--batch-size', metavar='batch_size', type=int, default=16,
-                    help='The batch size to use during training. Default is 16.')
+                    help='The batch size for training. Default is 16.')
 
 # ------------------------------------------------------------------------------
 # Entry function for Model Training
@@ -369,7 +363,7 @@ def run_model_training(model_name: str, tokenizer, model,
                        max_chunks: Union[int | None] = None,
                        models_dir=DEFAULT_MODELS_DIR):
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     try:
         start_time = datetime.now()
@@ -385,7 +379,8 @@ def run_model_training(model_name: str, tokenizer, model,
         # Train the model with specified parameters
         trainer = train_model(model_name, model, data_collator, datasets,
                               epochs=epochs, batch_size=batch_size,
-                              learning_rate=learning_rate, weight_decay=weight_decay)
+                              learning_rate=learning_rate, 
+                              weight_decay=weight_decay)
 
         # Save model, tokenizer & training history
         save_model(model_name, trainer, tokenizer, models_dir=models_dir)
