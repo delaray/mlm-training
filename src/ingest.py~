@@ -1,0 +1,58 @@
+import re
+import os
+import itertools
+import pymupdf
+from typing import List, Dict
+from pptx import Presentation
+from statistics import mean
+
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
+def flatten_chunks(documents_dict: dict) -> List[str]:
+
+    values_list = list(documents_dict.values())
+    flattened_list = list(itertools.chain(*values_list))
+
+    return flattened_list
+
+
+def read_files_directory(base_path: str,
+                         chunk_size: int,
+                         chunk_overlap: int) -> List[str]:
+    """
+    This function takes a directory path as input and reads every file in the directory
+    and its subdirectories using the ReadFile function.
+
+    Args:
+    directory_path (str): The path to the directory containing the files.
+
+    Returns:
+    dict: A dictionary where the keys are file paths and the values are the contents of the files.
+    """
+
+    loader = DocumentIngest(chunk_size=chunk_size,
+                            chunk_overlap=chunk_overlap)
+
+    files_content = {}
+
+    # Walk through the directory tree
+    for root, dirs, files in os.walk(base_path):
+        for filename in files:
+            filepath = os.path.join(root, filename)
+
+            try:
+                # Read the file using the ReadFile function
+                content = loader.load_and_split(filepath)
+                files_content[filepath] = content
+                # print(f"Reading and storing {filepath}")
+            except Exception as e:
+                pass
+                # print(f"Error reading file {filepath}: {e}")
+
+    filtered_dict = {k: v for k, v in files_content.items() if v is not None}
+
+    values_list = list(filtered_dict.values())
+    flattened_list = list(itertools.chain(*values_list))
+
+    return flattened_list
