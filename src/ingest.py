@@ -33,22 +33,26 @@ def read_files_directory(base_path: str,
 
     loader = DocumentIngest(chunk_size=chunk_size,
                             chunk_overlap=chunk_overlap)
+    print(f'Document loader: {loader}')
 
     files_content = {}
 
     # Walk through the directory tree
     for root, dirs, files in os.walk(base_path):
+        print(f"Reading files in {root}")
+        # print(f"Files: {files}")
         for filename in files:
+            print(f"Reading {filename}")
             filepath = os.path.join(root, filename)
 
             try:
                 # Read the file using the ReadFile function
                 content = loader.load_and_split(filepath)
                 files_content[filepath] = content
-                # print(f"Reading and storing {filepath}")
+                print(f"Reading and storing {filepath}")
             except Exception as e:
                 pass
-                # print(f"Error reading file {filepath}: {e}")
+                print(f"Error reading file {filepath}: {e}")
 
     filtered_dict = {k: v for k, v in files_content.items() if v is not None}
 
@@ -113,90 +117,90 @@ class DocumentIngest():
         return text
 
 
-@staticmethod
-def read_pptx_as_text(document_path: str) -> str:
-    presentation = Presentation(document_path)
-    extracted_texts = []
+    @staticmethod
+    def read_pptx_as_text(document_path: str) -> str:
+        presentation = Presentation(document_path)
+        extracted_texts = []
 
-    for slide_number, slide in enumerate(presentation.slides):
+        for slide_number, slide in enumerate(presentation.slides):
 
-        # Collect the texts from the components (shapes) of the slide
-        shapes_text = []
-        for shape in slide.shapes:
-            if hasattr(shape, "text"):
-                if shape.text.strip() != '':
-                    shapes_text.append(shape.text.strip())
+            # Collect the texts from the components (shapes) of the slide
+            shapes_text = []
+            for shape in slide.shapes:
+                if hasattr(shape, "text"):
+                    if shape.text.strip() != '':
+                        shapes_text.append(shape.text.strip())
 
-        # Remove trailing slide number from texts
-        shapes_text = shapes_text[:-1] if len(shapes_text) > 0 else shapes_text
+            # Remove trailing slide number from texts
+            shapes_text = shapes_text[:-1] if len(shapes_text) > 0 else shapes_text
 
-        # Append the extracted text to the list of extracted texts
-        if shapes_text != []:
-            extracted_texts.append(shapes_text)
+            # Append the extracted text to the list of extracted texts
+            if shapes_text != []:
+                extracted_texts.append(shapes_text)
+            else:
+                # Insert None placeholders so we know slide number
+                # (i.e. index) and number of empty slides
+                extracted_texts.append('')
+
+        # Return the extracted text from all slides as a single string
+        extracted_text = ' '.join([' '.join(strs) for strs in extracted_texts])
+        extracted_text = extracted_text.replace('\n', ' ')
+
+        return extracted_text
+
+
+    @staticmethod
+    def filter_pages(list_pages: List[str]) -> List[str]:
+
+        list_pages_clean = [page for page in list_pages if len(page) > 0]
+        list_pages_clean = [page for page in list_pages_clean if not bool(
+            re.search("Intentionally Blank", page))]
+
+        return list_pages_clean
+
+
+    @staticmethod
+    def filter_blocks(list_blocks: List[tuple],
+                    y_diff: int = 400,
+                    y_min: int = 55,
+                    y_max: int = 735,
+                    min_len: int = 5) -> List[str]:
+
+        list_blocks_clean = [i for i in list_blocks if i[3]-i[1] < y_diff]
+        list_blocks_clean = [i for i in list_blocks_clean if i[3] > y_min]
+        list_blocks_clean = [i for i in list_blocks_clean if i[3] < y_max]
+        list_blocks_clean = [i for i in list_blocks_clean if len(i[4]) > min_len]
+
+        list_text = [i[4] for i in list_blocks_clean]
+        list_text_clean = [
+            i for i in list_text if not bool(re.search('^Figure', i))]
+        list_text_clean = [
+            i for i in list_text_clean if not bool(re.search('^Table', i))]
+
+        if len(list_text_clean) > 1:
+            return list_text_clean
         else:
-            # Insert None placeholders so we know slide number
-            # (i.e. index) and number of empty slides
-            extracted_texts.append('')
-
-    # Return the extracted text from all slides as a single string
-    extracted_text = ' '.join([' '.join(strs) for strs in extracted_texts])
-    extracted_text = extracted_text.replace('\n', ' ')
-
-    return extracted_text
+            return []
 
 
-@staticmethod
-def filter_pages(list_pages: List[str]) -> List[str]:
+    def load_and_split(self, document_path: str) -> List[str]:
+        # regex = (\d{7})_{0,1}\d{0,2}\.(pdf|pptx)
 
-    list_pages_clean = [page for page in list_pages if len(page) > 0]
-    list_pages_clean = [page for page in list_pages_clean if not bool(
-        re.search("Intentionally Blank", page))]
+        try:
+            if '.pdf' in document_path:
+                text = DocumentIngest.read_pdf_as_text(document_path)
+                # print (f"{document_path} document has been split and loaded")
+            else:
+                pass
+                # print (f"{document_path} format not taken into account, document is not parsed")
 
-    return list_pages_clean
+            text_chunks = self.text_splitter.split_text(text)
 
+            return text_chunks
 
-@staticmethod
-def filter_blocks(list_blocks: List[tuple],
-                  y_diff: int = 400,
-                  y_min: int = 55,
-                  y_max: int = 735,
-                  min_len: int = 5) -> List[str]:
-
-    list_blocks_clean = [i for i in list_blocks if i[3]-i[1] < y_diff]
-    list_blocks_clean = [i for i in list_blocks_clean if i[3] > y_min]
-    list_blocks_clean = [i for i in list_blocks_clean if i[3] < y_max]
-    list_blocks_clean = [i for i in list_blocks_clean if len(i[4]) > min_len]
-
-    list_text = [i[4] for i in list_blocks_clean]
-    list_text_clean = [
-        i for i in list_text if not bool(re.search('^Figure', i))]
-    list_text_clean = [
-        i for i in list_text_clean if not bool(re.search('^Table', i))]
-
-    if len(list_text_clean) > 1:
-        return list_text_clean
-    else:
-        return []
-
-
-def load_and_split(self, document_path: str) -> List[str]:
-    # regex = (\d{7})_{0,1}\d{0,2}\.(pdf|pptx)
-
-    try:
-        if '.pdf' in document_path:
-            text = DocumentIngest.read_pdf_as_text(document_path)
-            # print (f"{document_path} document has been split and loaded")
-        else:
+        except:
             pass
-            # print (f"{document_path} format not taken into account, document is not parsed")
-
-        text_chunks = self.text_splitter.split_text(text)
-
-        return text_chunks
-
-    except:
-        pass
-        # print (f"error reading {document_path}, document not parsed ")
+            # print (f"error reading {document_path}, document not parsed ")
 
 
 def group_texts(examples, block_size=256):

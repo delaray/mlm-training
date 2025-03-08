@@ -5,8 +5,6 @@ import logging
 from datetime import date, datetime
 from typing import Union
 import matplotlib.pyplot as plt
-
-import torch
 from datasets import Dataset
 
 from transformers import AutoTokenizer, AutoModelForMaskedLM
@@ -21,7 +19,7 @@ from src.ingest import read_files_directory
 # Global Defaults & Settings
 # -----------------------------------------------------------------------------
 
-DEFAULT_DATA_DIR = 'data'
+DEFAULT_DATA_DIR = 'books'
 DEFAULT_RESULTS_DIR = 'results'
 DEFAULT_LOGS_DIRECTORY = 'logs'
 DEFAULT_MODELS_DIR = 'models'
