@@ -31,17 +31,19 @@ def read_files_directory(base_path: str,
     dict: A dictionary where the keys are file paths and the values are the contents of the files.
     """
 
-    loader = DocumentIngest(chunk_size=chunk_size,
-                            chunk_overlap=chunk_overlap)
+    loader = DocumentIngest(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
     print(f'Document loader: {loader}')
 
     files_content = {}
+    files_count = 0
+    problem_files = []
 
     # Walk through the directory tree
     for root, dirs, files in os.walk(base_path):
         print(f"Reading files in {root}")
         # print(f"Files: {files}")
         for filename in files:
+            files_count += 1
             print(f"Reading {filename}")
             filepath = os.path.join(root, filename)
 
@@ -49,17 +51,17 @@ def read_files_directory(base_path: str,
                 # Read the file using the ReadFile function
                 content = loader.load_and_split(filepath)
                 files_content[filepath] = content
-                print(f"Reading and storing {filepath}")
+                # print(f"Reading and storing {filepath}")
             except Exception as e:
-                pass
                 print(f"Error reading file {filepath}: {e}")
-
+                problem_files.append(filepath)
+                
     filtered_dict = {k: v for k, v in files_content.items() if v is not None}
 
     values_list = list(filtered_dict.values())
     flattened_list = list(itertools.chain(*values_list))
 
-    return flattened_list
+    return flattened_list, files_count, problem_files
 
 
 class DocumentIngest():

@@ -103,15 +103,18 @@ def tokenize_function(examples, tokenizer=DEFAULT_TOKENIZER):
                      return_overflowing_tokens=True)
 
 
+# ------------------------------------------------------------------------------
+
 def prepare_datasets(data_path=DEFAULT_DATA_DIR, 
                      max_chunks: Union[int | None] = None) -> dict:
 
     prep_start_time = datetime.now()
     logging.info("Preparing data sets")
 
-    # Load data
-    chunks = read_files_directory(
-        data_path, chunk_size=max_chunk_size, chunk_overlap=0)
+    # Load and chunk data
+    chunks, files_count, problem_files =\
+        read_files_directory(data_path, chunk_size=max_chunk_size,
+                             chunk_overlap=0)
     chunks = chunks[:max_chunks] if max_chunks is not None else chunks
 
     if len(chunks) > 0:
@@ -120,31 +123,32 @@ def prepare_datasets(data_path=DEFAULT_DATA_DIR,
         dataset = Dataset.from_dict(data_dict)
         dataset = dataset.train_test_split(test_size=0.1, seed=2024)
 
-        lm_datasets = dataset.map(tokenize_function,
+        data_sets = dataset.map(tokenize_function,
                                   batched=True,
                                   num_proc=4,
                                   remove_columns=["text"])
 
         # Total number of chunks
-        n_chunks = len(lm_datasets['train']) + len(lm_datasets['test'])
+        n_chunks = len(data_sets['train']) + len(data_sets['test'])
 
         # Log dataset dimensions
         logging.info(f"A total of {n_chunks} have been prepared")
         logging.info(f"The max length tokens is {max_token_length}")
-        logging.info(f"{len(lm_datasets['train'])} will be used for training")
+        logging.info(f"{len(data_sets['train'])} will be used for training")
 
         # Log total data preparation time
         prep_end_time = datetime.now()
         logging.info(
             f"Data preparation took {prep_end_time - prep_start_time}")
 
-        return lm_datasets, chunks
+        return data_sets, chunks, files_count, problem_files
 
     else:
         logging.info(
             'The list of chunks is empty, there is no dataset to prepare.')
-        return None, []
+        return None, [], 0, []
 
+# ------------------------------------------------------------------------------
 
 def get_training_args(model_name=DEFAULT_MODEL_NAME,
                       epochs: float = DEFAULT_EPOCHS,
@@ -369,7 +373,7 @@ def run_model_training(model_name: str, tokenizer, model,
         logging.info(f"Training model {model_name}")
 
         # Prepare Training data & data collator
-        datasets, _ = prepare_datasets(
+        datasets, _, count, problems = prepare_datasets(
             data_path=data_path, max_chunks=max_chunks)
         data_collator = DataCollatorForLanguageModeling(
             tokenizer=tokenizer, mlm_probability=0.15)
@@ -385,11 +389,11 @@ def run_model_training(model_name: str, tokenizer, model,
         save_training_history(trainer, model_name, epochs, path="results")
 
         # Return the trainer object
-        return trainer
+        return trainer, count, problems
 
     except Exception as e:
         print_and_log(f"\nError in run_training_model {model_name}\n{e}\n")
-        return trainer
+        return trainer, count, problems 
 
 
 # ------------------------------------------------------------------------------
