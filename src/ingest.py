@@ -44,7 +44,7 @@ def read_files_directory(base_path: str,
         # print(f"Files: {files}")
         for filename in files:
             files_count += 1
-            print(f"Reading {filename}")
+            # print(f"Reading {filename}")
             filepath = os.path.join(root, filename)
 
             try:
@@ -55,6 +55,7 @@ def read_files_directory(base_path: str,
             except Exception as e:
                 print(f"Error reading file {filepath}: {e}")
                 problem_files.append(filepath)
+                continue
                 
     filtered_dict = {k: v for k, v in files_content.items() if v is not None}
 
