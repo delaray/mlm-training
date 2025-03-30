@@ -108,7 +108,8 @@ class DocumentIngest():
 
         # Filter by mean line length
         list_pages_clean_str_filter = [
-            page for page in list_pages_clean_str if DocumentIngest.get_mean_line_length(page)]
+            page for page in list_pages_clean_str 
+            if DocumentIngest.get_mean_line_length(page)]
 
         # Filter by page content
         list_pages_superclean = DocumentIngest.filter_pages(
@@ -128,18 +129,18 @@ class DocumentIngest():
         for slide_number, slide in enumerate(presentation.slides):
 
             # Collect the texts from the components (shapes) of the slide
-            shapes_text = []
+            text = []
             for shape in slide.shapes:
                 if hasattr(shape, "text"):
                     if shape.text.strip() != '':
-                        shapes_text.append(shape.text.strip())
+                        text.append(shape.text.strip())
 
             # Remove trailing slide number from texts
-            shapes_text = shapes_text[:-1] if len(shapes_text) > 0 else shapes_text
+            text = text[:-1] if len(text) > 0 else text
 
             # Append the extracted text to the list of extracted texts
-            if shapes_text != []:
-                extracted_texts.append(shapes_text)
+            if text != []:
+                extracted_texts.append(text)
             else:
                 # Insert None placeholders so we know slide number
                 # (i.e. index) and number of empty slides
@@ -172,7 +173,8 @@ class DocumentIngest():
         list_blocks_clean = [i for i in list_blocks if i[3]-i[1] < y_diff]
         list_blocks_clean = [i for i in list_blocks_clean if i[3] > y_min]
         list_blocks_clean = [i for i in list_blocks_clean if i[3] < y_max]
-        list_blocks_clean = [i for i in list_blocks_clean if len(i[4]) > min_len]
+        list_blocks_clean = [i for i in list_blocks_clean 
+                             if len(i[4]) > min_len]
 
         list_text = [i[4] for i in list_blocks_clean]
         list_text_clean = [
@@ -184,7 +186,6 @@ class DocumentIngest():
             return list_text_clean
         else:
             return []
-
 
     def load_and_split(self, document_path: str) -> List[str]:
         # regex = (\d{7})_{0,1}\d{0,2}\.(pdf|pptx)
@@ -208,7 +209,8 @@ class DocumentIngest():
 
 def group_texts(examples, block_size=256):
     """
-    This column is not present in ipynb but causes an error in script. Removing it seems to fix issue.
+    This column is not present in ipynb but causes an error in script. 
+    Removing it seems to fix issue.
     TODO: Understand bug and fix it properly.
     """
     if 'overflow_to_sample_mapping' in examples.keys():
@@ -218,8 +220,8 @@ def group_texts(examples, block_size=256):
     concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
     total_length = len(concatenated_examples[list(examples.keys())[0]])
 
-    # We drop the small remainder, we could add padding if the model supported it instead of this drop, you
-    # customize this part to your needs.
+    # We drop the small remainder, we could add padding if the model supported 
+    # it instead of this drop, you customize this part to your needs.
     total_length = (total_length // block_size) * block_size
 
     # Split by chunks of max_len.
