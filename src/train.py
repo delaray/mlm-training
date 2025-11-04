@@ -148,6 +148,7 @@ def prepare_datasets(data_path=DEFAULT_DATA_DIR,
             'The list of chunks is empty, there is no dataset to prepare.')
         return None, [], 0, []
 
+
 # ------------------------------------------------------------------------------
 
 def get_training_args(model_name=DEFAULT_MODEL_NAME,
@@ -354,7 +355,6 @@ parser.add_argument('--batch-size', metavar='batch_size', type=int, default=16,
 # ------------------------------------------------------------------------------
 # Entry function for Model Training
 # ------------------------------------------------------------------------------
-
 
 def run_model_training(model_name: str, tokenizer, model,
                        data_path=DEFAULT_DATA_DIR,
