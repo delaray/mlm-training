@@ -3,5 +3,16 @@ name = "mlm-training"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = []
+requires-python = ">=3.12"
+dependencies = [
+    "datasets>=4.4.0",
+    "ipython>=9.6.0",
+    "langchain-text-splitters>=1.0.0",
+    "matplotlib>=3.10.7",
+    "pre-commit>=4.3.0",
+    "pymupdf>=1.26.5",
+    "python-pptx>=1.0.2",
+    "torch>=2.9.0",
+    "transformers>=4.57.1",
+]
+
