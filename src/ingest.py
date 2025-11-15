@@ -2,12 +2,18 @@ import re
 import os
 import itertools
 import pymupdf
-from typing import List, Dict
+from typing import List
 from pptx import Presentation
 from statistics import mean
-
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from dotenv import load_dotenv
 
+load_dotenv()
+
+
+# ----------------------------------------------------------------------------
+# Flatten chunks from dictionary to list
+# ----------------------------------------------------------------------------
 
 def flatten_chunks(documents_dict: dict) -> List[str]:
 
@@ -17,18 +23,23 @@ def flatten_chunks(documents_dict: dict) -> List[str]:
     return flattened_list
 
 
+# ----------------------------------------------------------------------------
+# Flatten chunks from dictionary to list
+# ----------------------------------------------------------------------------
+
 def read_files_directory(base_path: str,
                          chunk_size: int,
                          chunk_overlap: int) -> List[str]:
     """
-    This function takes a directory path as input and reads every file in the directory
-    and its subdirectories using the ReadFile function.
+    This function takes a directory path as input and reads every file
+    in the directory and its subdirectories using the ReadFile function.
 
     Args:
     directory_path (str): The path to the directory containing the files.
 
     Returns:
-    dict: A dictionary where the keys are file paths and the values are the contents of the files.
+    dict: A dictionary where the keys are file paths and the values are
+    the contents of the files.
     """
 
     loader = DocumentIngest(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
@@ -55,8 +66,7 @@ def read_files_directory(base_path: str,
             except Exception as e:
                 print(f"Error reading file {filepath}: {e}")
                 problem_files.append(filepath)
-                continue
-                
+
     filtered_dict = {k: v for k, v in files_content.items() if v is not None}
 
     values_list = list(filtered_dict.values())
@@ -65,15 +75,21 @@ def read_files_directory(base_path: str,
     return flattened_list, files_count, problem_files
 
 
+# ----------------------------------------------------------------------------
+# Document Ingest class
+# ----------------------------------------------------------------------------
+
 class DocumentIngest():
 
     def __init__(self,
                  chunk_size: int = 1100,
                  chunk_overlap: int = 200):
-        self.text_splitter = self.create_text_splitter(chunk_size=chunk_size,
-                                                       chunk_overlap=chunk_overlap)
+        self.text_splitter = \
+            self.create_text_splitter(chunk_size=chunk_size,
+                                      chunk_overlap=chunk_overlap)
 
-    def create_text_splitter(self, chunk_size: int, chunk_overlap: int) -> RecursiveCharacterTextSplitter:
+    def create_text_splitter(self, chunk_size: int, chunk_overlap: int
+                             ) -> RecursiveCharacterTextSplitter:
         text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=chunk_size,
             chunk_overlap=chunk_overlap,
@@ -108,7 +124,7 @@ class DocumentIngest():
 
         # Filter by mean line length
         list_pages_clean_str_filter = [
-            page for page in list_pages_clean_str 
+            page for page in list_pages_clean_str
             if DocumentIngest.get_mean_line_length(page)]
 
         # Filter by page content
@@ -119,7 +135,6 @@ class DocumentIngest():
         text = '\n'.join(list_pages_superclean)
 
         return text
-
 
     @staticmethod
     def read_pptx_as_text(document_path: str) -> str:
@@ -152,7 +167,6 @@ class DocumentIngest():
 
         return extracted_text
 
-
     @staticmethod
     def filter_pages(list_pages: List[str]) -> List[str]:
 
@@ -162,18 +176,17 @@ class DocumentIngest():
 
         return list_pages_clean
 
-
     @staticmethod
     def filter_blocks(list_blocks: List[tuple],
-                    y_diff: int = 400,
-                    y_min: int = 55,
-                    y_max: int = 735,
-                    min_len: int = 5) -> List[str]:
+                      y_diff: int = 400,
+                      y_min: int = 55,
+                      y_max: int = 735,
+                      min_len: int = 5) -> List[str]:
 
         list_blocks_clean = [i for i in list_blocks if i[3]-i[1] < y_diff]
         list_blocks_clean = [i for i in list_blocks_clean if i[3] > y_min]
         list_blocks_clean = [i for i in list_blocks_clean if i[3] < y_max]
-        list_blocks_clean = [i for i in list_blocks_clean 
+        list_blocks_clean = [i for i in list_blocks_clean
                              if len(i[4]) > min_len]
 
         list_text = [i[4] for i in list_blocks_clean]
@@ -196,20 +209,25 @@ class DocumentIngest():
                 # print (f"{document_path} document has been split and loaded")
             else:
                 pass
-                # print (f"{document_path} format not taken into account, document is not parsed")
+                # print (f"{document_path} format not taken into account,
+                #  document is not parsed")
 
             text_chunks = self.text_splitter.split_text(text)
 
             return text_chunks
 
-        except:
-            pass
-            # print (f"error reading {document_path}, document not parsed ")
+        except Exception as err:
+            print(f"Error reading {document_path}, document not parsed\n{err}")
+
+
+# ----------------------------------------------------------------------------
+# Group texts into blocks
+# ----------------------------------------------------------------------------
 
 
 def group_texts(examples, block_size=256):
     """
-    This column is not present in ipynb but causes an error in script. 
+    This column is not present in ipynb but causes an error in script.
     Removing it seems to fix issue.
     TODO: Understand bug and fix it properly.
     """
@@ -220,7 +238,7 @@ def group_texts(examples, block_size=256):
     concatenated_examples = {k: sum(examples[k], []) for k in examples.keys()}
     total_length = len(concatenated_examples[list(examples.keys())[0]])
 
-    # We drop the small remainder, we could add padding if the model supported 
+    # We drop the small remainder, we could add padding if the model supported
     # it instead of this drop, you customize this part to your needs.
     total_length = (total_length // block_size) * block_size
 
@@ -233,3 +251,7 @@ def group_texts(examples, block_size=256):
     result["labels"] = result["input_ids"].copy()
 
     return result
+
+# ----------------------------------------------------------------------------
+# End of File
+# ----------------------------------------------------------------------------
