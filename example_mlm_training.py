@@ -58,8 +58,10 @@ LEARNING_RATE = 2e-4
 MLM_PROBABILITY = 0.15
 
 # PEFT parameters
-USE_QLORA = True  # Recommended for memory efficiency
-USE_LORA = True
+# NOTE: Disabling QLoRA for RTX 5090 compatibility (sm_120 not fully supported yet)
+# You can enable these once PyTorch has full sm_120 support
+USE_QLORA = False  # Disabled due to RTX 5090 compute capability
+USE_LORA = True    # LoRA without quantization still works
 LORA_R = 16
 LORA_ALPHA = 32
 LORA_DROPOUT = 0.1
@@ -150,7 +152,7 @@ def main():
         learning_rate=LEARNING_RATE,
         mlm_probability=MLM_PROBABILITY,
         gradient_accumulation_steps=4,
-        fp16=True
+        fp16=False  # Disabled for RTX 5090 sm_120 compatibility
     )
     
     logging.info(f"✓ Training complete")

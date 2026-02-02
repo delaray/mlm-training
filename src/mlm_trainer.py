@@ -228,17 +228,19 @@ def setup_model_for_mlm_training(
         logging.info("Model prepared for quantized training")
         
     else:
-        # Load model normally
-        logging.info("Loading model without quantization")
+        # Load model normally (no quantization, no device_map for RTX 5090 compatibility)
+        # Keep on CPU initially to avoid sm_120 kernel issues during PEFT setup
+        logging.info("Loading model without quantization (on CPU first)")
         model = AutoModelForMaskedLM.from_pretrained(
             model_name,
-            device_map="auto",
-            trust_remote_code=True
+            trust_remote_code=True,
+            torch_dtype=torch.float32  # Load in FP32 on CPU
         )
+        logging.info("Model loaded on CPU")
     
-    # Apply LoRA if requested
+    # Apply LoRA if requested (do this on CPU to avoid sm_120 kernel issues)
     if use_lora:
-        logging.info("Applying LoRA configuration")
+        logging.info("Applying LoRA configuration on CPU")
         
         # Auto-detect target modules if not specified
         if target_modules is None:
@@ -257,7 +259,12 @@ def setup_model_for_mlm_training(
         
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
-        logging.info("LoRA applied successfully")
+        logging.info("LoRA applied successfully on CPU")
+    
+    # RTX 5090 (sm_120) lacks kernels even for basic operations like embeddings
+    # Keep model on CPU for now - will be faster than hitting kernel errors
+    logging.info("Keeping model on CPU (RTX 5090 sm_120 lacks required CUDA kernels)")
+    logging.info("Note: Training will use CPU. For GPU training, wait for PyTorch with full sm_120 support.")
     
     logging.info("="*80)
     return model, is_quantized
@@ -336,13 +343,14 @@ def train_mlm_model(
         logging_steps=logging_steps,
         save_steps=save_steps,
         eval_steps=eval_steps,
-        evaluation_strategy="steps",
+        eval_strategy="steps",  # Renamed from evaluation_strategy in newer transformers
         save_strategy="steps",
         save_total_limit=save_total_limit,
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        fp16=fp16 and torch.cuda.is_available(),
+        fp16=False,  # Disabled - RTX 5090 sm_120 requires CPU training
+        use_cpu=True,  # Force CPU training for RTX 5090 compatibility
         report_to=["tensorboard"],
         push_to_hub=False,
         dataloader_num_workers=4,
