@@ -81,6 +81,8 @@ def read_files_directory(base_path: str,
 
 class DocumentIngest():
 
+    text = ""
+
     def __init__(self,
                  chunk_size: int = 1100,
                  chunk_overlap: int = 200):

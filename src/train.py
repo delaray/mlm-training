@@ -19,7 +19,7 @@ from src.ingest import read_files_directory
 # Global Defaults & Settings
 # -----------------------------------------------------------------------------
 
-DEFAULT_DATA_DIR = 'books'
+DEFAULT_DATA_DIR =  "C:/education/books/Computer Science/Artificial Intelligence/Generative AI"
 DEFAULT_RESULTS_DIR = 'results'
 DEFAULT_LOGS_DIRECTORY = 'logs'
 DEFAULT_MODELS_DIR = 'models'
@@ -124,9 +124,9 @@ def prepare_datasets(data_path=DEFAULT_DATA_DIR,
         dataset = dataset.train_test_split(test_size=0.1, seed=2024)
 
         data_sets = dataset.map(tokenize_function,
-                                  batched=True,
-                                  num_proc=4,
-                                  remove_columns=["text"])
+                                batched=True,
+                                num_proc=4,
+                                remove_columns=["text"])
 
         # Total number of chunks
         n_chunks = len(data_sets['train']) + len(data_sets['test'])
@@ -351,6 +351,7 @@ parser.add_argument('--decay', metavar='decay', type=float, default=0.002,
 
 parser.add_argument('--batch-size', metavar='batch_size', type=int, default=16,
                     help='The batch size for training. Default is 16.')
+
 
 # ------------------------------------------------------------------------------
 # Entry function for Model Training

@@ -1,7 +1,7 @@
 [project]
 name = "mlm-training"
 version = "0.1.0"
-description = "Add your description here"
+description = "MLM Training for Encoder Models with PEFT/LoRA optimization"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,5 +16,11 @@ dependencies = [
     "python-pptx>=1.0.2",
     "torch>=2.9.0",
     "transformers>=4.57.1",
+    "peft>=0.13.0",
+    "bitsandbytes>=0.45.0",
+    "accelerate>=1.2.1",
+    "sentencepiece>=0.2.0",
+    "tensorboard>=2.18.0",
+    "scipy>=1.15.1",
 ]
 

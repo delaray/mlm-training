@@ -4,5 +4,7 @@
 			"path": "."
 		}
 	],
-	"settings": {}
+	"settings": {
+		"python.defaultInterpreterPath": "c:\\projects\\mlm-training\\.venv\\Scripts\\python.exe"
+	}
 }
