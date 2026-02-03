@@ -61,3 +61,40 @@
 2026-02-02 19:01:27,437 - root - INFO -   Effective batch size: 32
 2026-02-02 19:01:27,437 - root - INFO -   FP16: False
 2026-02-02 19:01:27,518 - root - INFO - Starting training...
+2026-02-03 03:44:37,749 - root - INFO - Training completed!
+2026-02-03 03:44:37,749 - root - INFO - Training loss: 7.4524
+2026-02-03 03:44:37,749 - root - INFO - Evaluating model...
+2026-02-03 03:46:23,885 - root - INFO - Evaluation results:
+2026-02-03 03:46:23,885 - root - INFO -   eval_loss: 4.8595
+2026-02-03 03:46:23,885 - root - INFO -   eval_runtime: 106.1293
+2026-02-03 03:46:23,885 - root - INFO -   eval_samples_per_second: 2.2900
+2026-02-03 03:46:23,885 - root - INFO -   eval_steps_per_second: 0.2920
+2026-02-03 03:46:23,885 - root - INFO -   epoch: 10.0000
+2026-02-03 03:46:23,885 - root - INFO - Total training time: 8:44:56.451583
+2026-02-03 03:46:23,885 - root - INFO - ================================================================================
+2026-02-03 03:46:23,887 - root - INFO - 
+================================================================================
+2026-02-03 03:46:23,887 - root - INFO - STEP 4: SAVING MODEL
+2026-02-03 03:46:23,887 - root - INFO - ================================================================================
+
+2026-02-03 03:46:23,887 - root - INFO - ================================================================================
+2026-02-03 03:46:23,887 - root - INFO - Saving model to: models\deberta-v3-base-mlm-trained-20260202
+2026-02-03 03:46:23,887 - root - INFO - ================================================================================
+2026-02-03 03:46:23,888 - root - INFO - Saving PEFT (LoRA) adapters...
+2026-02-03 03:46:23,938 - root - INFO - PEFT adapters saved to: models\deberta-v3-base-mlm-trained-20260202
+2026-02-03 03:46:23,939 - root - INFO - Saving tokenizer...
+2026-02-03 03:46:23,964 - root - INFO - Model and tokenizer saved successfully to: models\deberta-v3-base-mlm-trained-20260202
+2026-02-03 03:46:23,964 - root - INFO - ================================================================================
+2026-02-03 03:46:23,965 - root - INFO - 
+================================================================================
+2026-02-03 03:46:23,965 - root - INFO - STEP 5: TESTING EMBEDDINGS
+2026-02-03 03:46:23,966 - root - INFO - ================================================================================
+
+2026-02-03 03:46:24,277 - root - INFO - Embedding Information:
+2026-02-03 03:46:24,277 - root - INFO -   embedding_size: 768
+2026-02-03 03:46:24,277 - root - INFO -   max_position_embeddings: 512
+2026-02-03 03:46:24,278 - root - INFO -   num_hidden_layers: 12
+2026-02-03 03:46:24,278 - root - INFO -   num_attention_heads: 12
+2026-02-03 03:46:24,278 - root - INFO -   vocab_size: 128100
+2026-02-03 03:46:24,278 - root - INFO -   model_type: deberta-v2
+2026-02-03 03:46:24,278 - root - INFO - Generating embeddings on device: cuda
