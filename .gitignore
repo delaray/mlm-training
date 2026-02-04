@@ -3,4 +3,6 @@ books/
 models/
 results/
 zip/
-git add
+doc/*.md~
+notes/*.md~
+data/mlm/
