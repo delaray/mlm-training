@@ -61,3 +61,14 @@
 2026-02-04 11:25:00,367 - root - INFO -   Effective batch size: 32
 2026-02-04 11:25:00,367 - root - INFO -   FP16: False
 2026-02-04 11:25:00,569 - root - INFO - Starting training...
+2026-02-05 06:49:32,374 - root - INFO - Training completed!
+2026-02-05 06:49:32,375 - root - INFO - Training loss: 6.1593
+2026-02-05 06:49:32,375 - root - INFO - Evaluating model...
+2026-02-05 06:53:34,736 - root - INFO - Evaluation results:
+2026-02-05 06:53:34,736 - root - INFO -   eval_loss: 4.7352
+2026-02-05 06:53:34,736 - root - INFO -   eval_runtime: 242.3551
+2026-02-05 06:53:34,736 - root - INFO -   eval_samples_per_second: 2.2280
+2026-02-05 06:53:34,736 - root - INFO -   eval_steps_per_second: 0.2810
+2026-02-05 06:53:34,736 - root - INFO -   epoch: 10.0000
+2026-02-05 06:53:34,736 - root - INFO - Total training time: 19:28:34.371072
+2026-02-05 06:53:34,736 - root - INFO - ================================================================================

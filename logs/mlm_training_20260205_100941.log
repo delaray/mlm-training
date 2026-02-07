@@ -1,0 +1,74 @@
+2026-02-05 10:09:41,437 - root - INFO - ================================================================================
+2026-02-05 10:09:41,437 - root - INFO - MLM TRAINING PIPELINE
+2026-02-05 10:09:41,437 - root - INFO - ================================================================================
+2026-02-05 10:09:41,437 - root - INFO - Model: microsoft/deberta-v3-base
+2026-02-05 10:09:41,438 - root - INFO - Data Directory: data/books
+2026-02-05 10:09:41,438 - root - INFO - Output Directory: results\training-deberta-v3-base-20260205-1009
+2026-02-05 10:09:41,438 - root - INFO - ================================================================================
+2026-02-05 10:09:41,439 - root - INFO - 
+================================================================================
+2026-02-05 10:09:41,439 - root - INFO - STEP 1: PREPARING DATASET
+2026-02-05 10:09:41,439 - root - INFO - ================================================================================
+
+2026-02-05 10:09:41,439 - root - INFO - ================================================================================
+2026-02-05 10:09:41,439 - root - INFO - Starting MLM Dataset Preparation
+2026-02-05 10:09:41,439 - root - INFO - ================================================================================
+2026-02-05 10:09:41,439 - root - INFO - Loading tokenizer from: models\deberta-v3-base
+2026-02-05 10:09:41,647 - root - INFO - Reading documents from: data/books
+2026-02-05 10:09:59,535 - root - INFO - Successfully read 38 files
+2026-02-05 10:09:59,535 - root - INFO - Total chunks available: 13876
+2026-02-05 10:09:59,690 - root - INFO - Splitting dataset (test_split=0.1)
+2026-02-05 10:09:59,693 - root - INFO - Tokenizing dataset...
+2026-02-05 10:10:20,694 - root - INFO - Training samples: 12488
+2026-02-05 10:10:20,694 - root - INFO - Test samples: 1388
+2026-02-05 10:10:20,694 - root - INFO - Max sequence length: 512
+2026-02-05 10:10:20,694 - root - INFO - Dataset preparation completed in 0:00:39.254795
+2026-02-05 10:10:20,694 - root - INFO - ================================================================================
+2026-02-05 10:10:20,734 - root - INFO -   Training samples: 12488
+2026-02-05 10:10:20,734 - root - INFO -   Test samples: 1388
+2026-02-05 10:10:20,734 - root - INFO - 
+================================================================================
+2026-02-05 10:10:20,734 - root - INFO - STEP 2: SETTING UP MODEL
+2026-02-05 10:10:20,734 - root - INFO - ================================================================================
+
+2026-02-05 10:10:20,734 - root - INFO - ================================================================================
+2026-02-05 10:10:20,734 - root - INFO - Setting up model for MLM training
+2026-02-05 10:10:20,734 - root - INFO - ================================================================================
+2026-02-05 10:10:20,734 - root - INFO - Loading model without quantization (on CPU first)
+2026-02-05 10:10:20,794 - root - INFO - Model loaded on CPU
+2026-02-05 10:10:20,794 - root - INFO - Applying LoRA configuration on CPU
+2026-02-05 10:10:20,794 - root - INFO - Auto-detected target modules: ['query', 'key', 'value', 'dense']
+2026-02-05 10:10:21,780 - root - INFO - LoRA applied successfully on CPU
+2026-02-05 10:10:21,780 - root - INFO - Keeping model on CPU (RTX 5090 sm_120 lacks required CUDA kernels)
+2026-02-05 10:10:21,780 - root - INFO - Note: Training will use CPU. For GPU training, wait for PyTorch with full sm_120 support.
+2026-02-05 10:10:21,780 - root - INFO - ================================================================================
+2026-02-05 10:10:21,781 - root - INFO -   Quantized: False
+2026-02-05 10:10:21,781 - root - INFO -   Using LoRA: True
+2026-02-05 10:10:21,782 - root - INFO - 
+================================================================================
+2026-02-05 10:10:21,782 - root - INFO - STEP 3: TRAINING MODEL
+2026-02-05 10:10:21,782 - root - INFO - ================================================================================
+
+2026-02-05 10:10:21,782 - root - INFO - ================================================================================
+2026-02-05 10:10:21,782 - root - INFO - Starting MLM Training
+2026-02-05 10:10:21,782 - root - INFO - ================================================================================
+2026-02-05 10:10:21,783 - root - INFO - Training configuration:
+2026-02-05 10:10:21,783 - root - INFO -   Epochs: 10
+2026-02-05 10:10:21,783 - root - INFO -   Batch size: 8
+2026-02-05 10:10:21,783 - root - INFO -   Learning rate: 0.0002
+2026-02-05 10:10:21,783 - root - INFO -   MLM probability: 0.15
+2026-02-05 10:10:21,783 - root - INFO -   Gradient accumulation: 4
+2026-02-05 10:10:21,783 - root - INFO -   Effective batch size: 32
+2026-02-05 10:10:21,783 - root - INFO -   FP16: False
+2026-02-05 10:10:21,943 - root - INFO - Starting training...
+2026-02-07 11:20:49,830 - root - INFO - Training completed!
+2026-02-07 11:20:49,830 - root - INFO - Training loss: 4.3491
+2026-02-07 11:20:49,831 - root - INFO - Evaluating model...
+2026-02-07 11:29:17,249 - root - INFO - Evaluation results:
+2026-02-07 11:29:17,249 - root - INFO -   eval_loss: 3.1398
+2026-02-07 11:29:17,249 - root - INFO -   eval_runtime: 507.4124
+2026-02-07 11:29:17,249 - root - INFO -   eval_samples_per_second: 2.7350
+2026-02-07 11:29:17,250 - root - INFO -   eval_steps_per_second: 0.3430
+2026-02-07 11:29:17,250 - root - INFO -   epoch: 10.0000
+2026-02-07 11:29:17,250 - root - INFO - Total training time: 2 days, 1:18:55.467753
+2026-02-07 11:29:17,250 - root - INFO - ================================================================================
