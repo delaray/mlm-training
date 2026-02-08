@@ -15,6 +15,7 @@ import os
 import logging
 from datetime import datetime
 from sklearn.metrics.pairwise import cosine_similarity
+from transformers import Trainer
 
 from src.mlm_trainer import (
     prepare_mlm_dataset,
@@ -70,10 +71,11 @@ LORA_DROPOUT = 0.1
 # Paths
 BASE_MODEL_PATH = os.path.join(MODELS_DIR, MODEL_SHORT_NAME)
 
-trained_model_name = f"{MODEL_SHORT_NAME}-mlm-trained-{datetime.now().strftime('%Y%m%d')}"
+now_time = datetime.now().strftime('%Y%m%d')
+trained_model_name = f"{MODEL_SHORT_NAME}-mlm-trained-{now_time}"
 TRAINED_MODEL_PATH = os.path.join(MODELS_DIR, trained_model_name)
 
-output_path = f"training-{MODEL_SHORT_NAME}-{datetime.now().strftime('%Y%m%d-%H%M')}"
+output_path = f"training-{MODEL_SHORT_NAME}-{now_time}"
 OUTPUT_DIR = os.path.join(RESULTS_DIR, output_path)
 
 
@@ -86,7 +88,7 @@ def main():
 
     # Setup logging
     os.makedirs(LOGS_DIR, exist_ok=True)
-    log_file = os.path.join(LOGS_DIR, f"mlm_training_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+    log_file = os.path.join(LOGS_DIR, f"mlm_training_{now_time}.log")
     setup_logging(log_file=log_file)
 
     logging.info("="*80)
@@ -115,7 +117,7 @@ def main():
         max_chunks=MAX_CHUNKS
     )
 
-    logging.info(f"✓ Dataset prepared successfully")
+    logging.info("✓ Dataset prepared successfully")
     logging.info(f"  Training samples: {len(datasets['train'])}")
     logging.info(f"  Test samples: {len(datasets['test'])}")
 
@@ -138,7 +140,7 @@ def main():
         load_in_8bit=False
     )
 
-    logging.info(f"✓ Model setup complete")
+    logging.info("✓ Model setup complete")
     logging.info(f"  Quantized: {is_quantized}")
     logging.info(f"  Using LoRA: {USE_LORA}")
 
@@ -163,7 +165,7 @@ def main():
         fp16=False  # Disabled for RTX 5090 sm_120 compatibility
     )
 
-    logging.info(f"✓ Training complete")
+    logging.info("✓ Training complete")
 
     return trainer
 
@@ -183,7 +185,7 @@ def main():
     )
 
     logging.info(f"✓ Model saved to: {TRAINED_MODEL_PATH}")
-    
+
     # ------------------------------------------------------------------------
     # Step 5: Test Embeddings Generation
     # ------------------------------------------------------------------------
@@ -249,7 +251,7 @@ def example_generate_embeddings():
     # Texts to embed
     texts = [
         "Artificial intelligence is transforming technology.",
-        "Natural language processing helps computers understand human language.",
+        "Natural language processing helps computers understand language.",
         "Machine learning algorithms learn from data."
     ]
 
@@ -273,30 +275,31 @@ def example_generate_embeddings():
     for i, text1 in enumerate(texts):
         for j, text2 in enumerate(texts):
             if i < j:
-                print(f"  '{text1[:40]}...' <-> '{text2[:40]}...': {similarities[i][j]:.4f}")
+                print(f"  '{text1[:40]}...' <-> '{text2[:40]}...': "
+                      f"{similarities[i][j]:.4f}")
 
 
 # ------------------------------------------------------------------------------
 # Example: Load and Continue Training
 # ------------------------------------------------------------------------------
 
-def example_continue_training():
+def example_continue_training() -> Trainer:
     """Example of loading a trained model and continuing training"""
-    
+
     # Load the model
     model, tokenizer = load_trained_model(
         model_path=TRAINED_MODEL_PATH,
         base_model_name=BASE_MODEL_PATH,
         is_peft_model=True
     )
-    
+
     # Prepare new dataset (or use existing)
     datasets, _ = prepare_mlm_dataset(
         data_dir=DATA_DIR,
         model_name=BASE_MODEL_PATH,
         max_length=MAX_LENGTH
     )
-    
+
     # Continue training
     trainer = train_mlm_model(
         model=model,
@@ -305,9 +308,10 @@ def example_continue_training():
         output_dir=OUTPUT_DIR + "-continued",
         epochs=5,  # Additional epochs
         batch_size=BATCH_SIZE,
-        learning_rate=LEARNING_RATE * 0.5  # Lower learning rate for fine-tuning
+        # Lower learning rate for fine-tuning
+        learning_rate=LEARNING_RATE * 0.5
     )
-    
+
     # Save again
     save_trained_model(
         model=model,
@@ -315,6 +319,8 @@ def example_continue_training():
         save_path=TRAINED_MODEL_PATH + "-continued",
         is_peft_model=True
     )
+
+    return trainer
 
 
 # ------------------------------------------------------------------------------
@@ -324,7 +330,7 @@ def example_continue_training():
 if __name__ == "__main__":
     # Run the complete training pipeline
     main()
-    
+
     # Uncomment to run other examples:
     # example_generate_embeddings()
     # example_continue_training()

@@ -43,7 +43,8 @@ def extract_pdf_text(pdf_path: str, max_pages: Optional[int] = None) -> str:
 
 
 def normalize_text(text: str) -> str:
-    # Remove common header/footer noise patterns (best-effort; customize for your PDFs)
+    # Remove common header/footer noise patterns (best-effort; customize
+    # for your PDFs)
     text = re.sub(r"\n{3,}", "\n\n", text)
     # Fix hyphenation across line breaks: "exam-\nple" -> "example"
     text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
@@ -55,7 +56,8 @@ def normalize_text(text: str) -> str:
     return text.strip()
 
 
-def split_paragraphs(text: str, min_chars: int = 300, max_chars: int = 1800) -> List[str]:
+def split_paragraphs(text: str, min_chars: int = 300, max_chars: int = 1800
+                     ) -> List[str]:
     raw_paras = [p.strip() for p in text.split("\n\n") if p.strip()]
     paras = []
     buf = ""
@@ -137,7 +139,8 @@ def ollama_chat(
     if seed is not None:
         payload["options"]["seed"] = seed
 
-    r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload, timeout=timeout_s)
+    r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload,
+                      timeout=timeout_s)
     r.raise_for_status()
     data = r.json()
     return data["message"]["content"]
@@ -145,7 +148,8 @@ def ollama_chat(
 
 def extract_json_from_text(text: str) -> Any:
     """
-    Best-effort JSON extraction: supports responses that wrap JSON in markdown fences.
+    Best-effort JSON extraction: supports responses that wrap JSON in
+    markdown fences.
     """
     text = text.strip()
     # Try fenced code block
@@ -170,19 +174,24 @@ def extract_json_from_text(text: str) -> Any:
 # ----------------------------------------------------------------------------
 # Data generation prompts
 # ----------------------------------------------------------------------------
+
 QA_GEN_SYSTEM = (
-    "You generate high-quality supervised fine-tuning examples grounded in a provided excerpt. "
-    "Never invent facts not present in the excerpt. Prefer assistant-like helpful answers."
+    """You generate high-quality supervised fine-tuning examples
+    grounded in a provided excerpt. """
+    """Never invent facts not present in the excerpt.
+    Prefer assistant-like helpful answers."""
 )
 
 
 def qa_gen_user(excerpt: str, n_pairs: int) -> str:
     return f"""
-Create {n_pairs} diverse question/answer pairs that are ANSWERABLE using ONLY the excerpt.
+Create {n_pairs} diverse question/answer pairs that are ANSWERABLE using
+ONLY the excerpt.
 
 Rules:
 - The answer must be fully supported by the excerpt (no outside knowledge).
-- Mix question types: definition, why/how, comparison, application, edge case, step-by-step (when possible).
+- Mix question types: definition, why/how, comparison, application, edge case,
+  step-by-step (when possible).
 - Avoid trivial copy/paste questions.
 - Keep answers helpful and clear; quote short phrases only when necessary.
 - Return STRICT JSON only, no commentary.
@@ -206,7 +215,8 @@ EXCERPT:
 
 
 SUPPORT_CHECK_SYSTEM = (
-    "You are a strict verifier. You check whether an answer is fully supported by an excerpt."
+    """You are a strict verifier. You check whether an answer is fully
+    supported by an excerpt."""
 )
 
 
@@ -218,7 +228,8 @@ Return STRICT JSON only:
 {{
   "verdict": "SUPPORTED" | "NOT_SUPPORTED",
   "reason": "short reason",
-  "fix": "If NOT_SUPPORTED, provide a corrected answer that IS supported, otherwise empty string."
+  "fix": "If NOT_SUPPORTED, provide a corrected answer that IS supported,
+          otherwise empty string."
 }}
 
 QUESTION: {question}
@@ -232,7 +243,8 @@ EXCERPT:
 # ----------------------------------------------------------------------------
 # Dataset writing
 # ----------------------------------------------------------------------------
-def to_chat_example(excerpt: str, question: str, answer: str) -> Dict[str, Any]:
+def to_chat_example(excerpt: str, question: str, answer: str
+                    ) -> Dict[str, Any]:
     user_content = (
         "Using ONLY the excerpt below, answer the question.\n\n"
         f"EXCERPT:\n{excerpt}\n\n"
@@ -259,13 +271,16 @@ class GenConfig:
     out_path: str = "dataset.jsonl"
 
 
-def generate_for_paragraph(paragraph: str, cfg: GenConfig) -> List[Dict[str, Any]]:
+def generate_for_paragraph(paragraph: str, cfg: GenConfig
+                           ) -> List[Dict[str, Any]]:
     # 1) Generate pairs
     raw = ollama_chat(
         model=cfg.model,
         messages=[
-            {"role": "system", "content": QA_GEN_SYSTEM},
-            {"role": "user", "content": qa_gen_user(paragraph, cfg.pairs_per_paragraph)},
+            {"role": "system",
+             "content": QA_GEN_SYSTEM},
+            {"role": "user",
+             "content": qa_gen_user(paragraph, cfg.pairs_per_paragraph)},
         ],
         temperature=cfg.temperature,
         top_p=cfg.top_p,
@@ -286,8 +301,10 @@ def generate_for_paragraph(paragraph: str, cfg: GenConfig) -> List[Dict[str, Any
             check_raw = ollama_chat(
                 model=cfg.model,
                 messages=[
-                    {"role": "system", "content": SUPPORT_CHECK_SYSTEM},
-                    {"role": "user", "content": support_check_user(paragraph, q, a)},
+                    {"role": "system",
+                     "content": SUPPORT_CHECK_SYSTEM},
+                    {"role": "user",
+                     "content": support_check_user(paragraph, q, a)},
                 ],
                 temperature=0.0,  # deterministic checking
                 top_p=1.0,
@@ -314,7 +331,8 @@ def main():
     ap.add_argument("--temperature", type=float, default=0.7)
     ap.add_argument("--top-p", type=float, default=0.9)
     ap.add_argument("--seed", type=int, default=None)
-    ap.add_argument("--no-verify", action="store_true", help="Disable support verification pass")
+    ap.add_argument("--no-verify", action="store_true",
+                    help="Disable support verification pass")
     ap.add_argument("--max-pages", type=int, default=None)
     ap.add_argument("--max-paragraphs", type=int, default=None)
     ap.add_argument("--out", default="dataset.jsonl")
