@@ -18,13 +18,12 @@ from dataclasses import dataclass
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
 
-import requests
+import ollama
 from pypdf import PdfReader
 from tqdm import tqdm
 
 load_dotenv(override=True)
 
-OLLAMA_URL = os.environ.get("OLLAMA_URL", "http://localhost:11434")
 DEFAULT_MODEL = os.environ.get("OLLAMA_MODEL", "llama3.1:8b")
 
 
@@ -126,24 +125,21 @@ def ollama_chat(
     num_ctx: int = 8192,
     timeout_s: int = 180,
 ) -> str:
-    payload: Dict[str, Any] = {
-        "model": model,
-        "messages": messages,
-        "stream": False,
-        "options": {
-            "temperature": temperature,
-            "top_p": top_p,
-            "num_ctx": num_ctx,
-        },
+    """Call Ollama using the official Python API."""
+    options = {
+        "temperature": temperature,
+        "top_p": top_p,
+        "num_ctx": num_ctx,
     }
     if seed is not None:
-        payload["options"]["seed"] = seed
+        options["seed"] = seed
 
-    r = requests.post(f"{OLLAMA_URL}/api/chat", json=payload,
-                      timeout=timeout_s)
-    r.raise_for_status()
-    data = r.json()
-    return data["message"]["content"]
+    response = ollama.chat(
+        model=model,
+        messages=messages,
+        options=options,
+    )
+    return response['message']['content']
 
 
 def extract_json_from_text(text: str) -> Any:
@@ -287,7 +283,15 @@ def generate_for_paragraph(paragraph: str, cfg: GenConfig
         seed=cfg.seed,
     )
     data = extract_json_from_text(raw)
-    pairs = data.get("pairs", [])
+    
+    # Handle both {"pairs": [...]} and direct array formats
+    if isinstance(data, list):
+        pairs = data
+    elif isinstance(data, dict):
+        pairs = data.get("pairs", [])
+    else:
+        pairs = []
+    
     results = []
 
     # 2) Optional verification pass (reduces hallucinations a lot)
@@ -375,14 +379,15 @@ def main():
                         n_written += 1
                     break
                 except Exception as e:
-                    e = e.message if hasattr(e, "message") else str(e)
-                    print(f"⚠️  Warning: generation error (attempt "
-                          f"{attempt + 1}/4): {e}")
+                    error_msg = str(e)
+                    if attempt == 0:  # Only print on first attempt to reduce noise
+                        print(f"\n⚠️  Warning: generation error (attempt "
+                              f"{attempt + 1}/4): {error_msg[:100]}")
                     if attempt == 3:
                         # give up on this paragraph
-                        # you could log e somewhere if desired
-                        pass
-                    time.sleep(1.5 * (attempt + 1))
+                        print(f"❌ Failed after 4 attempts, skipping paragraph")
+                    else:
+                        time.sleep(1.5 * (attempt + 1))
 
     print(f"Done. Wrote {n_written} chat examples to {cfg.out_path}")
 
