@@ -142,27 +142,53 @@ def ollama_chat(
     return response['message']['content']
 
 
+def sanitize_json_string(text: str) -> str:
+    """Remove invalid control characters from JSON string."""
+    # Remove control characters except newlines and tabs that might be in strings
+    # We'll let json.loads handle proper escaping
+    cleaned = ""
+    for char in text:
+        code = ord(char)
+        # Keep printable chars, newlines, tabs, carriage returns
+        if code >= 32 or char in '\n\r\t':
+            cleaned += char
+        # Replace other control chars with space
+        elif code < 32:
+            cleaned += ' '
+    return cleaned
+
+
 def extract_json_from_text(text: str) -> Any:
     """
     Best-effort JSON extraction: supports responses that wrap JSON in
-    markdown fences.
+    markdown fences. Handles malformed JSON with control characters.
     """
     text = text.strip()
+    
     # Try fenced code block
     m = re.search(r"```(?:json)?\s*(\{.*?\}|\[.*?\])\s*```", text, flags=re.S)
     if m:
-        return json.loads(m.group(1))
+        json_text = sanitize_json_string(m.group(1))
+        try:
+            return json.loads(json_text)
+        except json.JSONDecodeError:
+            pass
 
     # Try direct JSON
     try:
-        return json.loads(text)
+        sanitized = sanitize_json_string(text)
+        return json.loads(sanitized)
     except json.JSONDecodeError:
         pass
 
     # Try to locate first {...} or [...]
     m2 = re.search(r"(\{.*\}|\[.*\])", text, flags=re.S)
     if m2:
-        return json.loads(m2.group(1))
+        json_text = sanitize_json_string(m2.group(1))
+        try:
+            return json.loads(json_text)
+        except json.JSONDecodeError:
+            pass
 
     raise ValueError("Could not parse JSON from model output.")
 
@@ -364,6 +390,7 @@ def main():
     random.shuffle(paragraphs)
 
     n_written = 0
+    n_failed = 0
     with open(cfg.out_path, "w", encoding="utf-8") as f:
         for para in tqdm(paragraphs, desc="Generating"):
             # Basic guard: skip very low-signal paragraphs
@@ -371,25 +398,34 @@ def main():
                 continue
 
             # Retry wrapper (Ollama occasionally returns malformed JSON)
+            success = False
             for attempt in range(4):
                 try:
                     examples = generate_for_paragraph(para, cfg)
                     for ex in examples:
                         f.write(json.dumps(ex, ensure_ascii=False) + "\n")
                         n_written += 1
+                    success = True
                     break
                 except Exception as e:
                     error_msg = str(e)
-                    if attempt == 0:  # Only print on first attempt to reduce noise
-                        print(f"\n⚠️  Warning: generation error (attempt "
-                              f"{attempt + 1}/4): {error_msg[:100]}")
+                    # Only show errors on final attempt to reduce noise
                     if attempt == 3:
-                        # give up on this paragraph
-                        print(f"❌ Failed after 4 attempts, skipping paragraph")
+                        n_failed += 1
+                        # Don't print individual errors - we'll show summary at end
                     else:
                         time.sleep(1.5 * (attempt + 1))
+            
+            # Flush file periodically to save progress
+            if n_written % 10 == 0:
+                f.flush()
 
-    print(f"Done. Wrote {n_written} chat examples to {cfg.out_path}")
+    print(f"\n{'='*60}")
+    print(f"✅ Done! Generated {n_written} chat examples")
+    if n_failed > 0:
+        print(f"⚠️  Skipped {n_failed} paragraphs due to repeated errors")
+    print(f"📁 Output: {cfg.out_path}")
+    print(f"{'='*60}")
 
 
 if __name__ == "__main__":
