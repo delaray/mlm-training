@@ -13,8 +13,8 @@ python-pptx
 ipywidgets
 matplotlib
 python-dotenv
-torch
 peft
+tensorboard
 
 # Then install PyTorch using the instructions at https://pytorch.org/get-started/loca
 # After having selected your config in the configuration panel, copy & paste the pip3 command.
