@@ -225,3 +225,31 @@ uv run python example_mlm_training.py  # Start training!
 **Project Status**: ✅ Production Ready  
 **Last Updated**: February 2, 2026  
 **Hardware Target**: Windows 11, 24GB GPU, 200GB RAM
+
+------------------------------------------------------------------------------
+
+# Installing Pytorch with CUDA 12.8 
+
+# 1. Uninstall current PyTorch, torchvision, torchaudio
+pip uninstall torch torchvision torchaudio -y
+
+# 2. Clear pip cache (optional but helps avoid old wheel conflicts)
+pip cache purge
+
+# 3. Install nightly PyTorch for CUDA 12.8
+pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
+
+# 4. Verify installation
+python -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
+
+## Tensorboard
+
+I've enabled TensorBoard in mlm_trainer.py:327-330. The changes include:
+
+Re-enabled TensorBoard reporting - Changed report_to back to ["tensorboard"]
+Set logging directory - Added environment variable TENSORBOARD_LOGGING_DIR to avoid the deprecation warning
+Now your training will log to TensorBoard. To view the training progress, open a new terminal and run:
+
+
+    tensorboard --logdir results\training-deberta-v3-base-20260220\logs
+

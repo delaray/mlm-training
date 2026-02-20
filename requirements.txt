@@ -7,12 +7,14 @@ accelerate
 langchain_text_splitters
 google-cloud-storage
 optuna
+scikit-learn
 pymupdf
 python-pptx
 ipywidgets
 matplotlib
 python-dotenv
 torch
+peft
 
 # Then install PyTorch using the instructions at https://pytorch.org/get-started/loca
 # After having selected your config in the configuration panel, copy & paste the pip3 command.
