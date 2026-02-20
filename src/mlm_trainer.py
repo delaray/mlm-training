@@ -357,9 +357,9 @@ def train_mlm_model(
         metric_for_best_model="eval_loss",
         greater_is_better=False,
         # Disabled - RTX 5090 sm_120 requires CPU training
-        fp16=False,
+        fp16=True,
         # Force CPU training for RTX 5090 compatibility
-        use_cpu=True,
+        use_cpu=False,
         report_to=["tensorboard"],
         push_to_hub=False,
         dataloader_num_workers=4,
