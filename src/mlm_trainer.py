@@ -238,7 +238,7 @@ def setup_model_for_mlm_training(
         model = AutoModelForMaskedLM.from_pretrained(
             model_name,
             trust_remote_code=True,
-            torch_dtype=torch.float32  # Load in FP32 on CPU
+            dtype=torch.float32  # Load in FP32 on CPU
         )
         logging.info("Model loaded on CPU")
 
@@ -463,7 +463,7 @@ def load_trained_model(
     model_path: str,
     base_model_name: Optional[str] = None,
     is_peft_model: bool = True,
-    device: str = "auto"
+    device: str = "cuda"  # Default to CUDA if available
 ) -> Tuple[AutoModelForMaskedLM, AutoTokenizer]:
     """
     Load a trained model and tokenizer.
@@ -549,6 +549,7 @@ def generate_embeddings(
     # Detect device
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
+    print(f"\n------------------------------------\nUsing Device: {device}\n------------------------------------\n")
 
     logging.info(f"Generating embeddings on device: {device}")
 
