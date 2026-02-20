@@ -117,7 +117,7 @@ def main():
         max_chunks=MAX_CHUNKS
     )
 
-    logging.info("✓ Dataset prepared successfully")
+    logging.info("[OK] Dataset prepared successfully")
     logging.info(f"  Training samples: {len(datasets['train'])}")
     logging.info(f"  Test samples: {len(datasets['test'])}")
 
@@ -140,7 +140,7 @@ def main():
         load_in_8bit=False
     )
 
-    logging.info("✓ Model setup complete")
+    logging.info("[OK] Model setup complete")
     logging.info(f"  Quantized: {is_quantized}")
     logging.info(f"  Using LoRA: {USE_LORA}")
 
@@ -165,7 +165,7 @@ def main():
         fp16=False  # Disabled for RTX 5090 sm_120 compatibility
     )
 
-    logging.info("✓ Training complete")
+    logging.info("[OK] Training complete")
 
     return trainer
 
@@ -184,7 +184,7 @@ def main():
         is_peft_model=USE_LORA
     )
 
-    logging.info(f"✓ Model saved to: {TRAINED_MODEL_PATH}")
+    logging.info(f"[OK] Model saved to: {TRAINED_MODEL_PATH}")
 
     # ------------------------------------------------------------------------
     # Step 5: Test Embeddings Generation
@@ -220,7 +220,7 @@ def main():
         normalize=True
     )
 
-    logging.info(f"✓ Generated embeddings for {len(test_texts)} texts")
+    logging.info(f"[OK] Generated embeddings for {len(test_texts)} texts")
     logging.info(f"  Embedding shape: {embeddings.shape}")
     logging.info(f"  Embedding dimension: {embeddings.shape[1]}")
 

@@ -325,6 +325,9 @@ def train_mlm_model(
 
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
+    
+    # Set TensorBoard logging directory (new method, logging_dir parameter is deprecated)
+    os.environ["TENSORBOARD_LOGGING_DIR"] = f"{output_dir}/logs"
 
     # Data collator for MLM
     data_collator = DataCollatorForLanguageModeling(
@@ -336,7 +339,6 @@ def train_mlm_model(
     # Training arguments
     training_args = TrainingArguments(
         output_dir=output_dir,
-        overwrite_output_dir=True,
         num_train_epochs=epochs,
         per_device_train_batch_size=batch_size,
         per_device_eval_batch_size=batch_size,
@@ -344,7 +346,6 @@ def train_mlm_model(
         learning_rate=learning_rate,
         weight_decay=weight_decay,
         warmup_steps=warmup_steps,
-        logging_dir=f"{output_dir}/logs",
         logging_steps=logging_steps,
         save_steps=save_steps,
         eval_steps=eval_steps,

@@ -196,16 +196,4 @@ Traceback (most recent call last):
   File "C:\Python313\Lib\logging\__init__.py", line 1153, in emit
     stream.write(msg + self.terminator)
     ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Python313\Lib\encodings\cp1252.py", line 19, in encode
-    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
-           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-UnicodeEncodeError: 'charmap' codec can't encode character '\u2713' in position 40: character maps to <undefined>
-Call stack:
-  File "C:\projects\mlm-training\mlm_train.py", line 326, in <module>
-    main()
-  File "C:\projects\mlm-training\mlm_train.py", line 166, in main
-    logging.info(f"✓ Training complete")
-Message: '✓ Training complete'
-Arguments: ()
-
-(mlm-training) C:\projects\mlm-training>
+  File "C:\Python313\Lib\encodings\
