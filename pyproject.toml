@@ -4,4 +4,9 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "langchain-text-splitters>=1.1.2",
+    "pymupdf>=1.28.2",
+    "python-dotenv>=1.2.3",
+    "python-pptx>=1.0.2",
+]
