@@ -186,6 +186,7 @@ def prepare_mlm_dataset(
 @timing
 def setup_model_for_mlm_training(
     model_name: str,
+    device: str = "auto",
     use_qlora: bool = True,
     use_lora: bool = True,
     lora_r: int = DEFAULT_LORA_R,
@@ -201,6 +202,7 @@ def setup_model_for_mlm_training(
 
     Args:
         model_name: HuggingFace model name or local path
+        device: Device policy: "auto", "cpu", or "cuda"
         use_qlora: Use QLoRA (quantized LoRA) - saves memory
         use_lora: Use LoRA for parameter-efficient fine-tuning
         lora_r: LoRA rank dimension
@@ -214,6 +216,17 @@ def setup_model_for_mlm_training(
         Tuple of (model, is_quantized)
     """
     logging.info("="*80)  # noqa: LOG015
+
+    if device not in {"auto", "cpu", "cuda"}:
+        raise ValueError('device must be "auto", "cpu", or "cuda"')
+
+    cuda_available = torch.cuda.is_available()
+    if device == "cuda" and not cuda_available:
+        raise RuntimeError("CUDA was requested, but no CUDA GPU is available")
+
+    use_cuda = cuda_available if device == "auto" else device == "cuda"
+    selected_device = "cuda" if use_cuda else "cpu"
+    logging.info(f"Selected training device: {selected_device}")  # noqa: LOG015
     logging.info("Setting up model for MLM training")  # noqa: LOG015
     logging.info("="*80)  # noqa: LOG015
 
@@ -243,8 +256,16 @@ def setup_model_for_mlm_training(
 
     is_quantized = False
 
-    # Configure quantization if using QLoRA
-    if use_qlora and (load_in_4bit or load_in_8bit):
+    quantization_requested = use_qlora and (load_in_4bit or load_in_8bit)
+    use_quantization = quantization_requested and use_cuda
+    if quantization_requested and not use_cuda:
+        logging.warning(  # noqa: LOG015
+            "QLoRA quantization requires CUDA; loading the model in FP32 "
+            "for CPU training instead."
+        )
+
+    # Configure quantization only when using a CUDA GPU.
+    if use_quantization:
         logging.info(f"Configuring quantization: 4-bit={load_in_4bit}, "  # noqa: LOG015
                      f"8-bit={load_in_8bit}")
 
@@ -270,26 +291,25 @@ def setup_model_for_mlm_training(
         logging.info("Model prepared for quantized training")  # noqa: LOG015
 
     else:
-        # Load model normally (no quantization, no device_map for RTX 5090
-        # compatibility) Keep on CPU initially to avoid sm_120 kernel issues
-        # during PEFT setup
-        logging.info("Loading model without quantization (on CPU first)")  # noqa: LOG015
+        logging.info("Loading model without quantization")  # noqa: LOG015
         model = AutoModelForMaskedLM.from_pretrained(
             model_source,
             trust_remote_code=True,
             dtype=torch.float32,  # Load in FP32 on CPU
             local_files_only=is_local_model,
         )
-        logging.info("Model loaded on CPU")  # noqa: LOG015
+        logging.info("Model loaded without quantization")  # noqa: LOG015
 
-    # Apply LoRA if requested (do this on CPU to avoid sm_120 kernel issues)
+    # Apply LoRA if requested.
     if use_lora:
-        logging.info("Applying LoRA configuration on CPU")  # noqa: LOG015
+        logging.info("Applying LoRA configuration")  # noqa: LOG015
 
         # Auto-detect target modules if not specified
         if target_modules is None:
-            # Common patterns for encoder models
-            target_modules = ["query", "key", "value", "dense"]
+            if getattr(model.config, "model_type", None) == "modernbert":
+                target_modules = ["Wqkv", "Wo", "Wi"]
+            else:
+                target_modules = ["query", "key", "value", "dense"]
             logging.info(f"Auto-detected target modules: {target_modules}")  # noqa: LOG015
 
         lora_config = LoraConfig(
@@ -303,13 +323,9 @@ def setup_model_for_mlm_training(
 
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
-        logging.info("LoRA applied successfully on CPU")  # noqa: LOG015
+        logging.info("LoRA applied successfully")  # noqa: LOG015
 
-    # RTX 5090 (sm_120) lacks kernels even for basic operations like embeddings
-    # Keep model on CPU for now - will be faster than hitting kernel errors
-    logging.info("Keeping model on CPU (RTX 5090 sm_120 lacks CUDA kernels)")  # noqa: LOG015
-    logging.info("Note: Training will use CPU.")  # noqa: LOG015
-    logging.info("For GPU wait for PyTorch with full sm_120 support.")  # noqa: LOG015
+    logging.info(f"Model setup complete for {selected_device} training")  # noqa: LOG015
 
     logging.info("="*80)  # noqa: LOG015
     return model, is_quantized
@@ -331,7 +347,8 @@ def train_mlm_model(
     eval_steps: int = 500,
     gradient_accumulation_steps: int = 4,
     fp16: bool = True,
-    save_total_limit: int = 2
+    save_total_limit: int = 2,
+    device: str = "auto",
 ) -> Trainer:
     """
     Train an encoder model using Masked Language Modeling (MLM).
@@ -353,6 +370,7 @@ def train_mlm_model(
         gradient_accumulation_steps: Accumulate gradients for larger eff. batch
         fp16: Use mixed precision training (fp16)
         save_total_limit: Keep only N most recent checkpoints
+        device: Device policy: "auto", "cpu", or "cuda"
 
     Returns:
         Trained Trainer object
@@ -362,6 +380,13 @@ def train_mlm_model(
     logging.info("="*80)
 
     start_time = datetime.now()
+
+    if device not in {"auto", "cpu", "cuda"}:
+        raise ValueError('device must be "auto", "cpu", or "cuda"')
+    cuda_available = torch.cuda.is_available()
+    if device == "cuda" and not cuda_available:
+        raise RuntimeError("CUDA was requested, but no CUDA GPU is available")
+    use_cuda = cuda_available if device == "auto" else device == "cuda"
 
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
@@ -396,8 +421,8 @@ def train_mlm_model(
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        fp16=fp16 and torch.cuda.is_available(),
-        use_cpu=not torch.cuda.is_available(),
+        fp16=fp16 and use_cuda,
+        use_cpu=not use_cuda,
         report_to=["tensorboard"],
         push_to_hub=False,
         dataloader_num_workers=4,
@@ -414,6 +439,7 @@ def train_mlm_model(
     effective_batch_size = batch_size * gradient_accumulation_steps
     logging.info(f"  Effective batch size: {effective_batch_size}")
     logging.info(f"  FP16: {training_args.fp16}")
+    logging.info(f"  Device: {'cuda' if use_cuda else 'cpu'}")
 
     # Create trainer
     trainer = Trainer(
