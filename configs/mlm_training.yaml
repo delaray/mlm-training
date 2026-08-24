@@ -1,0 +1,44 @@
+# Paths are resolved relative to the directory where run_mlm.py is executed.
+paths:
+  models_dir: models
+  results_dir: results
+  logs_dir: logs
+
+# PDF ingestion and tokenizer settings.
+dataset:
+  max_length: 512
+  chunk_size: 2048
+  chunk_overlap: 200
+  test_split: 0.1
+  max_chunks: null
+  use_fast_tokenizer: true
+
+# Model, LoRA, and quantization settings.
+model:
+  # auto selects CUDA when available and otherwise uses CPU.
+  device: auto
+  use_lora: true
+  use_qlora: true
+  lora_r: 16
+  lora_alpha: 32
+  lora_dropout: 0.1
+  # null enables architecture-aware target detection in mlm_trainer.py.
+  target_modules: null
+  load_in_4bit: true
+  load_in_8bit: false
+
+# Trainer hyperparameters.
+training:
+  epochs: 10
+  batch_size: 8
+  learning_rate: 0.0002
+  mlm_probability: 0.15
+  weight_decay: 0.01
+  warmup_steps: 500
+  logging_steps: 100
+  save_steps: 1000
+  eval_steps: 500
+  gradient_accumulation_steps: 4
+  # Automatically disabled when device resolves to CPU.
+  fp16: true
+  save_total_limit: 2

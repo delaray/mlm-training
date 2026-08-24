@@ -11,23 +11,28 @@ Author: MLM Training Project
 Date: February 2026
 """
 
-import os
 import logging
+import os
 from datetime import datetime
+
+from dotenv import load_dotenv
 from sklearn.metrics.pairwise import cosine_similarity
 from transformers import Trainer
 
 from src.mlm_trainer import (
-    prepare_mlm_dataset,
-    setup_model_for_mlm_training,
-    train_mlm_model,
-    save_trained_model,
-    load_trained_model,
     generate_embeddings,
     get_embedding_info,
-    setup_logging
+    load_trained_model,
+    prepare_mlm_dataset,
+    save_trained_model,
+    setup_logging,
+    setup_model_for_mlm_training,
+    train_mlm_model,
 )
 
+# Load environment variables from .env file
+load_dotenv(override=True)
+logger: logging.Logger = logging.getLogger("mlm_trainer")
 
 # ------------------------------------------------------------------------------
 # Configuration
@@ -71,7 +76,7 @@ LORA_DROPOUT = 0.1
 # Paths
 BASE_MODEL_PATH = os.path.join(MODELS_DIR, MODEL_SHORT_NAME)
 
-now_time = datetime.now().strftime('%Y%m%d')
+now_time = datetime.now().strftime('%Y%m%d')  # noqa: DTZ005
 trained_model_name = f"{MODEL_SHORT_NAME}-mlm-trained-{now_time}"
 TRAINED_MODEL_PATH = os.path.join(MODELS_DIR, trained_model_name)
 
