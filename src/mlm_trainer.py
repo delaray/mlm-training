@@ -11,32 +11,41 @@ Author: MLM Training Project
 Date: February 2026
 """
 
-import os
 import logging
+import os
 from datetime import datetime
-from typing import List, Dict, Union, Optional, Tuple
+from logging import Handler
+from pathlib import Path
+from typing import Any
+
+import numpy as np
 import torch
 from datasets import Dataset, DatasetDict
+from dotenv import load_dotenv
+from peft import (  # noqa: F401
+    LoraConfig,
+    PeftModel,
+    TaskType,
+    get_peft_model,
+    prepare_model_for_kbit_training,
+)
 from transformers import (
-    AutoTokenizer,
+    AutoConfig,
     AutoModel,
     AutoModelForMaskedLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
-    BitsAndBytesConfig
 )
-from peft import (
-    LoraConfig,
-    get_peft_model,
-    TaskType,
-    PeftModel,
-    prepare_model_for_kbit_training
-)
-import numpy as np
 
 from src.ingest import read_files_directory
+from src.utils import timing
 
+# Load environment variables from .env file
+load_dotenv(override=True)
+logger = logging.getLogger("mlm_trainer")
 
 # ------------------------------------------------------------------------------
 # Configuration & Defaults
@@ -56,21 +65,25 @@ DEFAULT_LORA_R = 16
 DEFAULT_LORA_ALPHA = 32
 DEFAULT_LORA_DROPOUT = 0.1
 
+# Books Data directory from environment variable or default
+BOOKS_DIR = os.getenv("BOOKS_DIR", DEFAULT_DATA_DIR)
+
 
 # ------------------------------------------------------------------------------
 # 1. Dataset Preparation Functions
 # ------------------------------------------------------------------------------
 
+@timing
 def prepare_mlm_dataset(
-    data_dir: str = DEFAULT_DATA_DIR,
+    data_dir: str = BOOKS_DIR,
     model_name: str = "google/electra-small-discriminator",
     max_length: int = DEFAULT_MAX_LENGTH,
     chunk_size: int = 2048,
     chunk_overlap: int = 200,
     test_split: float = 0.1,
-    max_chunks: Optional[int] = None,
+    max_chunks: int | None = None,
     use_fast_tokenizer: bool = True
-) -> Tuple[DatasetDict, AutoTokenizer]:
+     ) -> tuple[DatasetDict, AutoTokenizer]:
     """
     Prepare a dataset from a directory of PDF books for MLM training.
 
@@ -87,38 +100,38 @@ def prepare_mlm_dataset(
     Returns:
         Tuple of (DatasetDict with train/test splits, tokenizer)
     """
-    logging.info("="*80)
-    logging.info("Starting MLM Dataset Preparation")
-    logging.info("="*80)
+    logger.info("="*80)
+    logger.info("Starting MLM Dataset Preparation")
+    logger.info("="*80)
 
-    start_time = datetime.now()
+    start_time = datetime.now()  # noqa: DTZ005
 
     # Load tokenizer
-    logging.info(f"Loading tokenizer from: {model_name}")
+    logger.info(f"Loading tokenizer from: {model_name}")
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         use_fast=use_fast_tokenizer
     )
 
     # Read and chunk documents
-    logging.info(f"Reading documents from: {data_dir}")
+    logger.info(f"Reading documents from: {data_dir}")
     chunks, files_count, problem_files = read_files_directory(
         data_dir,
         chunk_size=chunk_size,
         chunk_overlap=chunk_overlap
     )
 
-    logging.info(f"Successfully read {files_count} files")
+    logger.info(f"Successfully read {files_count} files")
     if problem_files:
-        logging.warning(f"Failed to read {len(problem_files)} "
+        logger.warning(f"Failed to read {len(problem_files)} "
                         f"files: {problem_files}")
 
     # Limit chunks if specified
     if max_chunks is not None:
         chunks = chunks[:max_chunks]
-        logging.info(f"Limited to {max_chunks} chunks")
+        logger.info(f"Limited to {max_chunks} chunks")
 
-    logging.info(f"Total chunks available: {len(chunks)}")
+    logger.info(f"Total chunks available: {len(chunks)}")
 
     if len(chunks) == 0:
         raise ValueError("No text chunks extracted. Check data directory.")
@@ -128,7 +141,7 @@ def prepare_mlm_dataset(
     dataset = Dataset.from_dict(data_dict)
 
     # Split into train/test
-    logging.info(f"Splitting dataset (test_split={test_split})")
+    logger.info(f"Splitting dataset (test_split={test_split})")
     dataset = dataset.train_test_split(test_size=test_split, seed=42)
 
     # Tokenization function
@@ -143,7 +156,7 @@ def prepare_mlm_dataset(
         )
 
     # Apply tokenization
-    logging.info("Tokenizing dataset...")
+    logger.info("Tokenizing dataset...")
     tokenized_datasets = dataset.map(
         tokenize_function,
         batched=True,
@@ -155,13 +168,13 @@ def prepare_mlm_dataset(
     # Log statistics
     train_size = len(tokenized_datasets['train'])
     test_size = len(tokenized_datasets['test'])
-    logging.info(f"Training samples: {train_size}")
-    logging.info(f"Test samples: {test_size}")
-    logging.info(f"Max sequence length: {max_length}")
+    logger.info(f"Training samples: {train_size}")
+    logger.info(f"Test samples: {test_size}")
+    logger.info(f"Max sequence length: {max_length}")
 
-    elapsed = datetime.now() - start_time
-    logging.info(f"Dataset preparation completed in {elapsed}")
-    logging.info("="*80)
+    elapsed = datetime.now() - start_time  # noqa: DTZ005
+    logger.info(f"Dataset preparation completed in {elapsed}")
+    logger.info("="*80)
 
     return tokenized_datasets, tokenizer
 
@@ -170,6 +183,7 @@ def prepare_mlm_dataset(
 # 2. Model Training Functions with PEFT (LoRA/QLoRA)
 # ------------------------------------------------------------------------------
 
+@timing
 def setup_model_for_mlm_training(
     model_name: str,
     use_qlora: bool = True,
@@ -177,10 +191,10 @@ def setup_model_for_mlm_training(
     lora_r: int = DEFAULT_LORA_R,
     lora_alpha: int = DEFAULT_LORA_ALPHA,
     lora_dropout: float = DEFAULT_LORA_DROPOUT,
-    target_modules: Optional[List[str]] = None,
+    target_modules: list[str] | None = None,
     load_in_4bit: bool = True,
     load_in_8bit: bool = False
-) -> Tuple[AutoModelForMaskedLM, bool]:
+     ) -> tuple[AutoModelForMaskedLM | PeftModel, bool]:
     """
     Load and configure an encoder model for MLM training with
     optional LoRA/QLoRA.
@@ -199,15 +213,39 @@ def setup_model_for_mlm_training(
     Returns:
         Tuple of (model, is_quantized)
     """
-    logging.info("="*80)
-    logging.info("Setting up model for MLM training")
-    logging.info("="*80)
+    logging.info("="*80)  # noqa: LOG015
+    logging.info("Setting up model for MLM training")  # noqa: LOG015
+    logging.info("="*80)  # noqa: LOG015
+
+    model_path = Path(model_name).expanduser()
+    is_local_model = model_path.exists()
+
+    if model_path.is_absolute() and not is_local_model:
+        raise FileNotFoundError(
+            f"Local model directory does not exist: {model_path}. "
+            "Check the directory name and spelling."
+        )
+
+    if is_local_model:
+        model_path = model_path.resolve()
+        if not model_path.is_dir():
+            raise NotADirectoryError(
+                f"Local model path is not a directory: {model_path}"
+            )
+        if not (model_path / "config.json").is_file():
+            raise FileNotFoundError(
+                f"Local model directory has no config.json: {model_path}"
+            )
+        model_source = str(model_path)
+        logging.info(f"Using local model directory: {model_source}")  # noqa: LOG015
+    else:
+        model_source = model_name
 
     is_quantized = False
 
     # Configure quantization if using QLoRA
     if use_qlora and (load_in_4bit or load_in_8bit):
-        logging.info(f"Configuring quantization: 4-bit={load_in_4bit}, "
+        logging.info(f"Configuring quantization: 4-bit={load_in_4bit}, "  # noqa: LOG015
                      f"8-bit={load_in_8bit}")
 
         bnb_config = BitsAndBytesConfig(
@@ -215,42 +253,44 @@ def setup_model_for_mlm_training(
             load_in_8bit=load_in_8bit,
             bnb_4bit_quant_type="nf4" if load_in_4bit else None,
             bnb_4bit_compute_dtype=torch.float16 if load_in_4bit else None,
-            bnb_4bit_use_double_quant=True if load_in_4bit else False,
+            bnb_4bit_use_double_quant=bool(load_in_4bit),
         )
 
         model = AutoModelForMaskedLM.from_pretrained(
-            model_name,
+            model_source,
             quantization_config=bnb_config,
             device_map="auto",
-            trust_remote_code=True
+            trust_remote_code=True,
+            local_files_only=is_local_model,
         )
         is_quantized = True
 
         # Prepare model for k-bit training
         model = prepare_model_for_kbit_training(model)
-        logging.info("Model prepared for quantized training")
+        logging.info("Model prepared for quantized training")  # noqa: LOG015
 
     else:
         # Load model normally (no quantization, no device_map for RTX 5090
         # compatibility) Keep on CPU initially to avoid sm_120 kernel issues
         # during PEFT setup
-        logging.info("Loading model without quantization (on CPU first)")
+        logging.info("Loading model without quantization (on CPU first)")  # noqa: LOG015
         model = AutoModelForMaskedLM.from_pretrained(
-            model_name,
+            model_source,
             trust_remote_code=True,
-            dtype=torch.float32  # Load in FP32 on CPU
+            dtype=torch.float32,  # Load in FP32 on CPU
+            local_files_only=is_local_model,
         )
-        logging.info("Model loaded on CPU")
+        logging.info("Model loaded on CPU")  # noqa: LOG015
 
     # Apply LoRA if requested (do this on CPU to avoid sm_120 kernel issues)
     if use_lora:
-        logging.info("Applying LoRA configuration on CPU")
+        logging.info("Applying LoRA configuration on CPU")  # noqa: LOG015
 
         # Auto-detect target modules if not specified
         if target_modules is None:
             # Common patterns for encoder models
             target_modules = ["query", "key", "value", "dense"]
-            logging.info(f"Auto-detected target modules: {target_modules}")
+            logging.info(f"Auto-detected target modules: {target_modules}")  # noqa: LOG015
 
         lora_config = LoraConfig(
             r=lora_r,
@@ -263,15 +303,15 @@ def setup_model_for_mlm_training(
 
         model = get_peft_model(model, lora_config)
         model.print_trainable_parameters()
-        logging.info("LoRA applied successfully on CPU")
+        logging.info("LoRA applied successfully on CPU")  # noqa: LOG015
 
     # RTX 5090 (sm_120) lacks kernels even for basic operations like embeddings
     # Keep model on CPU for now - will be faster than hitting kernel errors
-    logging.info("Keeping model on CPU (RTX 5090 sm_120 lacks CUDA kernels)")
-    logging.info("Note: Training will use CPU.")
-    logging.info("For GPU wait for PyTorch with full sm_120 support.")
+    logging.info("Keeping model on CPU (RTX 5090 sm_120 lacks CUDA kernels)")  # noqa: LOG015
+    logging.info("Note: Training will use CPU.")  # noqa: LOG015
+    logging.info("For GPU wait for PyTorch with full sm_120 support.")  # noqa: LOG015
 
-    logging.info("="*80)
+    logging.info("="*80)  # noqa: LOG015
     return model, is_quantized
 
 
@@ -325,7 +365,7 @@ def train_mlm_model(
 
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
-    
+
     # Set TensorBoard logging directory (new method, logging_dir parameter is deprecated)
     os.environ["TENSORBOARD_LOGGING_DIR"] = f"{output_dir}/logs"
 
@@ -356,10 +396,8 @@ def train_mlm_model(
         load_best_model_at_end=True,
         metric_for_best_model="eval_loss",
         greater_is_better=False,
-        # Disabled - RTX 5090 sm_120 requires CPU training
-        fp16=True,
-        # Force CPU training for RTX 5090 compatibility
-        use_cpu=False,
+        fp16=fp16 and torch.cuda.is_available(),
+        use_cpu=not torch.cuda.is_available(),
         report_to=["tensorboard"],
         push_to_hub=False,
         dataloader_num_workers=4,
@@ -450,7 +488,7 @@ def save_trained_model(
 
     # Save training info
     info_path = os.path.join(save_path, "training_info.txt")
-    with open(info_path, "w") as f:
+    with open(info_path, "w", encoding="utf-8") as f:
         f.write(f"Model saved: {datetime.now()}\n")
         f.write(f"Is PEFT model: {is_peft_model}\n")
         f.write(f"Device: {next(model.parameters()).device}\n")
@@ -461,10 +499,10 @@ def save_trained_model(
 
 def load_trained_model(
     model_path: str,
-    base_model_name: Optional[str] = None,
+    base_model_name: str | None = None,
     is_peft_model: bool = True,
     device: str = "cuda"  # Default to CUDA if available
-) -> Tuple[AutoModelForMaskedLM, AutoTokenizer]:
+) -> tuple[AutoModelForMaskedLM, AutoTokenizer]:
     """
     Load a trained model and tokenizer.
 
@@ -521,14 +559,14 @@ def load_trained_model(
 # ------------------------------------------------------------------------------
 
 def generate_embeddings(
-    text: Union[str, List[str]],
+    text: str | list[str],
     model_path: str,
-    base_model_name: Optional[str] = None,
+    base_model_name: str | None = None,
     is_peft_model: bool = True,
     pooling_strategy: str = "mean",
     normalize: bool = True,
     max_length: int = DEFAULT_MAX_LENGTH,
-    device: Optional[str] = None
+    device: str | None = None
 ) -> np.ndarray:
     """
     Generate embeddings for text using the trained encoder model.
@@ -571,8 +609,8 @@ def generate_embeddings(
                 device_map=device,
                 trust_remote_code=True
             )
-        except Exception as e:
-            e = e.message if hasattr(e, "message") else str(e)
+        except Exception as err:  # noqa: BLE001
+            logging.debug("Could not load base encoder directly: %s", err)
             # If saved as MLM model, load and extract encoder
             mlm_model = AutoModelForMaskedLM.from_pretrained(
                 model_path,
@@ -622,7 +660,12 @@ def generate_embeddings(
             embeddings = hidden_states[:, 0, :]
         elif pooling_strategy == "max":
             # Max pooling
-            embeddings = torch.max(hidden_states, dim=1)[0]
+            attention_mask = inputs['attention_mask'].unsqueeze(-1).bool()
+            masked_hidden_states = hidden_states.masked_fill(
+                ~attention_mask,
+                torch.finfo(hidden_states.dtype).min,
+            )
+            embeddings = torch.max(masked_hidden_states, dim=1).values
         else:
             raise ValueError(f"Unknown pooling strategy: {pooling_strategy}")
 
@@ -640,8 +683,8 @@ def generate_embeddings(
 
 def get_embedding_info(
     model_path: str,
-    base_model_name: Optional[str] = None
-) -> Dict[str, any]:
+    base_model_name: str | None = None
+) -> dict[str, Any]:
     """
     Get information about embedding dimensions and model configuration.
 
@@ -657,10 +700,8 @@ def get_embedding_info(
     # Try to load config
     try:
         if base_model_name:
-            from transformers import AutoConfig
             config = AutoConfig.from_pretrained(base_model_name)
         else:
-            from transformers import AutoConfig
             config = AutoConfig.from_pretrained(model_path)
 
         info = {
@@ -683,12 +724,17 @@ def get_embedding_info(
 # Utility Functions
 # ------------------------------------------------------------------------------
 
-def setup_logging(log_file: Optional[str] = None, level=logging.INFO):
+def setup_logging(
+    log_file: str | None = None,
+    level: int = logging.INFO,
+) -> None:
     """Setup logging configuration"""
-    handlers = [logging.StreamHandler()]
+    handlers: list[Handler] = [logging.StreamHandler()]
 
     if log_file:
-        os.makedirs(os.path.dirname(log_file), exist_ok=True)
+        log_directory = os.path.dirname(log_file)
+        if log_directory:
+            os.makedirs(log_directory, exist_ok=True)
         handlers.append(logging.FileHandler(log_file))
 
     logging.basicConfig(

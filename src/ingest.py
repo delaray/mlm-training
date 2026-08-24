@@ -6,13 +6,16 @@ import re
 from statistics import mean
 from typing import cast
 
-import fitz as pymupdf
+# import fitz as pymupdf
+import pymupdf
 from dotenv import load_dotenv
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pptx import Presentation
 from pptx.shapes.autoshape import Shape
 
-load_dotenv()
+load_dotenv(override=True)
+
+DATA_DIR = os.getenv("BOOKS_DIR", "")
 
 
 # ----------------------------------------------------------------------------
@@ -31,11 +34,18 @@ def flatten_chunks(documents_dict: dict[str, list[str]]) -> list[str]:
 # Flatten chunks from dictionary to list
 # ----------------------------------------------------------------------------
 
-def read_files_directory(
-    base_path: str,
-    chunk_size: int,
-    chunk_overlap: int,
-) -> tuple[list[str], int, list[str]]:
+DEFAULT_CHUNK_SIZE = 1100
+DEFAULT_CHUNK_OVERLAP = 200
+
+
+# -----------------------------------------------------------------------------
+# Read files from directory and subdirectories
+# -----------------------------------------------------------------------------
+
+def read_files_directory(base_path: str = DATA_DIR,
+                         chunk_size: int = DEFAULT_CHUNK_SIZE,
+                         chunk_overlap: int = DEFAULT_CHUNK_OVERLAP
+                         ) -> tuple[list[str], int, list[str]]:
     """
     This function takes a directory path as input and reads every file
     in the directory and its subdirectories using the ReadFile function.

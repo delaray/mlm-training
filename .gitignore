@@ -6,3 +6,4 @@ zip/
 doc/*.md~
 notes/*.md~
 data/mlm/
+bert-base-uncased/

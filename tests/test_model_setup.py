@@ -37,7 +37,7 @@ try:
         load_in_4bit=False,
         load_in_8bit=False
     )
-    
+
     print()
     print("="*80)
     print("✅ SUCCESS! Model setup completed without errors")
@@ -53,7 +53,7 @@ try:
     print()
     print("🎉 Your system is ready for CPU-based training!")
     print()
-    
+
 except Exception as e:
     print()
     print("="*80)
