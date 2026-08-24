@@ -16,7 +16,7 @@ import os
 from datetime import datetime
 from logging import Handler
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 import numpy as np
 import torch
@@ -36,6 +36,8 @@ from transformers import (
     AutoTokenizer,
     BitsAndBytesConfig,
     DataCollatorForLanguageModeling,
+    PreTrainedModel,
+    PreTrainedTokenizerBase,
     Trainer,
     TrainingArguments,
 )
@@ -45,7 +47,7 @@ from src.utils import timing
 
 # Load environment variables from .env file
 load_dotenv(override=True)
-logger = logging.getLogger("mlm_trainer")
+logger: logging.Logger = logging.getLogger("mlm_trainer")
 
 # ------------------------------------------------------------------------------
 # Configuration & Defaults
@@ -83,7 +85,7 @@ def prepare_mlm_dataset(
     test_split: float = 0.1,
     max_chunks: int | None = None,
     use_fast_tokenizer: bool = True
-     ) -> tuple[DatasetDict, AutoTokenizer]:
+) -> tuple[DatasetDict, PreTrainedTokenizerBase]:
     """
     Prepare a dataset from a directory of PDF books for MLM training.
 
@@ -123,8 +125,9 @@ def prepare_mlm_dataset(
 
     logger.info(f"Successfully read {files_count} files")
     if problem_files:
-        logger.warning(f"Failed to read {len(problem_files)} "
-                        f"files: {problem_files}")
+        logger.warning(
+            f"Failed to read {len(problem_files)} files: {problem_files}"
+        )
 
     # Limit chunks if specified
     if max_chunks is not None:
@@ -176,7 +179,7 @@ def prepare_mlm_dataset(
     logger.info(f"Dataset preparation completed in {elapsed}")
     logger.info("="*80)
 
-    return tokenized_datasets, tokenizer
+    return tokenized_datasets, cast(PreTrainedTokenizerBase, tokenizer)
 
 
 # ------------------------------------------------------------------------------
@@ -195,7 +198,7 @@ def setup_model_for_mlm_training(
     target_modules: list[str] | None = None,
     load_in_4bit: bool = True,
     load_in_8bit: bool = False
-     ) -> tuple[AutoModelForMaskedLM | PeftModel, bool]:
+) -> tuple[PreTrainedModel | PeftModel, bool]:
     """
     Load and configure an encoder model for MLM training with
     optional LoRA/QLoRA.
@@ -215,7 +218,7 @@ def setup_model_for_mlm_training(
     Returns:
         Tuple of (model, is_quantized)
     """
-    logging.info("="*80)  # noqa: LOG015
+    logger.info("="*80)
 
     if device not in {"auto", "cpu", "cuda"}:
         raise ValueError('device must be "auto", "cpu", or "cuda"')
@@ -226,9 +229,9 @@ def setup_model_for_mlm_training(
 
     use_cuda = cuda_available if device == "auto" else device == "cuda"
     selected_device = "cuda" if use_cuda else "cpu"
-    logging.info(f"Selected training device: {selected_device}")  # noqa: LOG015
-    logging.info("Setting up model for MLM training")  # noqa: LOG015
-    logging.info("="*80)  # noqa: LOG015
+    logger.info(f"Selected training device: {selected_device}")
+    logger.info("Setting up model for MLM training")
+    logger.info("="*80)
 
     model_path = Path(model_name).expanduser()
     is_local_model = model_path.exists()
@@ -250,7 +253,7 @@ def setup_model_for_mlm_training(
                 f"Local model directory has no config.json: {model_path}"
             )
         model_source = str(model_path)
-        logging.info(f"Using local model directory: {model_source}")  # noqa: LOG015
+        logger.info(f"Using local model directory: {model_source}")
     else:
         model_source = model_name
 
@@ -259,50 +262,58 @@ def setup_model_for_mlm_training(
     quantization_requested = use_qlora and (load_in_4bit or load_in_8bit)
     use_quantization = quantization_requested and use_cuda
     if quantization_requested and not use_cuda:
-        logging.warning(  # noqa: LOG015
+        logger.warning(
             "QLoRA quantization requires CUDA; loading the model in FP32 "
             "for CPU training instead."
         )
 
     # Configure quantization only when using a CUDA GPU.
     if use_quantization:
-        logging.info(f"Configuring quantization: 4-bit={load_in_4bit}, "  # noqa: LOG015
-                     f"8-bit={load_in_8bit}")
+        logger.info(
+            f"Configuring quantization: 4-bit={load_in_4bit}, "
+            f"8-bit={load_in_8bit}"
+        )
 
         bnb_config = BitsAndBytesConfig(
             load_in_4bit=load_in_4bit,
             load_in_8bit=load_in_8bit,
-            bnb_4bit_quant_type="nf4" if load_in_4bit else None,
+            bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=torch.float16 if load_in_4bit else None,
             bnb_4bit_use_double_quant=bool(load_in_4bit),
         )
 
-        model = AutoModelForMaskedLM.from_pretrained(
-            model_source,
-            quantization_config=bnb_config,
-            device_map="auto",
-            trust_remote_code=True,
-            local_files_only=is_local_model,
+        model = cast(
+            PreTrainedModel,
+            AutoModelForMaskedLM.from_pretrained(
+                model_source,
+                quantization_config=bnb_config,
+                device_map="auto",
+                trust_remote_code=True,
+                local_files_only=is_local_model,
+            ),
         )
         is_quantized = True
 
         # Prepare model for k-bit training
         model = prepare_model_for_kbit_training(model)
-        logging.info("Model prepared for quantized training")  # noqa: LOG015
+        logger.info("Model prepared for quantized training")
 
     else:
-        logging.info("Loading model without quantization")  # noqa: LOG015
-        model = AutoModelForMaskedLM.from_pretrained(
-            model_source,
-            trust_remote_code=True,
-            dtype=torch.float32,  # Load in FP32 on CPU
-            local_files_only=is_local_model,
+        logger.info("Loading model without quantization")
+        model = cast(
+            PreTrainedModel,
+            AutoModelForMaskedLM.from_pretrained(
+                model_source,
+                trust_remote_code=True,
+                dtype=torch.float32,  # Load in FP32 on CPU
+                local_files_only=is_local_model,
+            ),
         )
-        logging.info("Model loaded without quantization")  # noqa: LOG015
+        logger.info("Model loaded without quantization")
 
     # Apply LoRA if requested.
     if use_lora:
-        logging.info("Applying LoRA configuration")  # noqa: LOG015
+        logger.info("Applying LoRA configuration")
 
         # Auto-detect target modules if not specified
         if target_modules is None:
@@ -310,7 +321,7 @@ def setup_model_for_mlm_training(
                 target_modules = ["Wqkv", "Wo", "Wi"]
             else:
                 target_modules = ["query", "key", "value", "dense"]
-            logging.info(f"Auto-detected target modules: {target_modules}")  # noqa: LOG015
+            logger.info(f"Auto-detected target modules: {target_modules}")
 
         lora_config = LoraConfig(
             r=lora_r,
@@ -321,19 +332,19 @@ def setup_model_for_mlm_training(
             task_type=TaskType.FEATURE_EXTRACTION  # For encoder models
         )
 
-        model = get_peft_model(model, lora_config)
+        model = cast(PeftModel, get_peft_model(model, lora_config))
         model.print_trainable_parameters()
-        logging.info("LoRA applied successfully")  # noqa: LOG015
+        logger.info("LoRA applied successfully")
 
-    logging.info(f"Model setup complete for {selected_device} training")  # noqa: LOG015
+    logger.info(f"Model setup complete for {selected_device} training")
 
-    logging.info("="*80)  # noqa: LOG015
+    logger.info("="*80)
     return model, is_quantized
 
 
 def train_mlm_model(
-    model: AutoModelForMaskedLM,
-    tokenizer: AutoTokenizer,
+    model: PreTrainedModel | PeftModel,
+    tokenizer: PreTrainedTokenizerBase,
     datasets: DatasetDict,
     output_dir: str = DEFAULT_RESULTS_DIR,
     epochs: int = DEFAULT_EPOCHS,
@@ -375,11 +386,11 @@ def train_mlm_model(
     Returns:
         Trained Trainer object
     """
-    logging.info("="*80)
-    logging.info("Starting MLM Training")
-    logging.info("="*80)
+    logger.info("="*80)
+    logger.info("Starting MLM Training")
+    logger.info("="*80)
 
-    start_time = datetime.now()
+    start_time = datetime.now()  # noqa: DTZ005
 
     if device not in {"auto", "cpu", "cuda"}:
         raise ValueError('device must be "auto", "cpu", or "cuda"')
@@ -391,7 +402,8 @@ def train_mlm_model(
     # Create output directory
     os.makedirs(output_dir, exist_ok=True)
 
-    # Set TensorBoard logging directory (new method, logging_dir parameter is deprecated)
+    # Set TensorBoard logging directory (new method, logging_dir
+    # parameter is deprecated)
     os.environ["TENSORBOARD_LOGGING_DIR"] = f"{output_dir}/logs"
 
     # Data collator for MLM
@@ -430,16 +442,16 @@ def train_mlm_model(
     )
 
     # Log training configuration
-    logging.info("Training configuration:")
-    logging.info(f"  Epochs: {epochs}")
-    logging.info(f"  Batch size: {batch_size}")
-    logging.info(f"  Learning rate: {learning_rate}")
-    logging.info(f"  MLM probability: {mlm_probability}")
-    logging.info(f"  Gradient accumulation: {gradient_accumulation_steps}")
+    logger.info("Training configuration:")
+    logger.info(f"  Epochs: {epochs}")
+    logger.info(f"  Batch size: {batch_size}")
+    logger.info(f"  Learning rate: {learning_rate}")
+    logger.info(f"  MLM probability: {mlm_probability}")
+    logger.info(f"  Gradient accumulation: {gradient_accumulation_steps}")
     effective_batch_size = batch_size * gradient_accumulation_steps
-    logging.info(f"  Effective batch size: {effective_batch_size}")
-    logging.info(f"  FP16: {training_args.fp16}")
-    logging.info(f"  Device: {'cuda' if use_cuda else 'cpu'}")
+    logger.info(f"  Effective batch size: {effective_batch_size}")
+    logger.info(f"  FP16: {training_args.fp16}")
+    logger.info(f"  Device: {'cuda' if use_cuda else 'cpu'}")
 
     # Create trainer
     trainer = Trainer(
@@ -451,23 +463,23 @@ def train_mlm_model(
     )
 
     # Train
-    logging.info("Starting training...")
+    logger.info("Starting training...")
     train_result = trainer.train()
 
     # Log training results
-    logging.info("Training completed!")
-    logging.info(f"Training loss: {train_result.training_loss:.4f}")
+    logger.info("Training completed!")
+    logger.info(f"Training loss: {train_result.training_loss:.4f}")
 
     # Evaluate
-    logging.info("Evaluating model...")
+    logger.info("Evaluating model...")
     eval_results = trainer.evaluate()
-    logging.info("Evaluation results:")
+    logger.info("Evaluation results:")
     for key, value in eval_results.items():
-        logging.info(f"  {key}: {value:.4f}")
+        logger.info(f"  {key}: {value:.4f}")
 
     elapsed = datetime.now() - start_time
-    logging.info(f"Total training time: {elapsed}")
-    logging.info("="*80)
+    logger.info(f"Total training time: {elapsed}")
+    logger.info("="*80)
 
     return trainer
 
@@ -477,8 +489,8 @@ def train_mlm_model(
 # ------------------------------------------------------------------------------
 
 def save_trained_model(
-    model: AutoModelForMaskedLM,
-    tokenizer: AutoTokenizer,
+    model: PreTrainedModel | PeftModel,
+    tokenizer: PreTrainedTokenizerBase,
     save_path: str,
     is_peft_model: bool = True
 ) -> None:
@@ -491,25 +503,25 @@ def save_trained_model(
         save_path: Directory to save the model
         is_peft_model: Whether this is a PEFT (LoRA) model
     """
-    logging.info("="*80)
-    logging.info(f"Saving model to: {save_path}")
-    logging.info("="*80)
+    logger.info("="*80)
+    logger.info(f"Saving model to: {save_path}")
+    logger.info("="*80)
 
     os.makedirs(save_path, exist_ok=True)
 
     if is_peft_model:
         # Save LoRA adapters
-        logging.info("Saving PEFT (LoRA) adapters...")
+        logger.info("Saving PEFT (LoRA) adapters...")
         model.save_pretrained(save_path)
-        logging.info(f"PEFT adapters saved to: {save_path}")
+        logger.info(f"PEFT adapters saved to: {save_path}")
     else:
         # Save full model
-        logging.info("Saving full model...")
+        logger.info("Saving full model...")
         model.save_pretrained(save_path)
-        logging.info(f"Full model saved to: {save_path}")
+        logger.info(f"Full model saved to: {save_path}")
 
     # Save tokenizer
-    logging.info("Saving tokenizer...")
+    logger.info("Saving tokenizer...")
     tokenizer.save_pretrained(save_path)
 
     # Save training info
@@ -519,8 +531,8 @@ def save_trained_model(
         f.write(f"Is PEFT model: {is_peft_model}\n")
         f.write(f"Device: {next(model.parameters()).device}\n")
 
-    logging.info(f"Model and tokenizer saved successfully to: {save_path}")
-    logging.info("="*80)
+    logger.info(f"Model and tokenizer saved successfully to: {save_path}")
+    logger.info("="*80)
 
 
 def load_trained_model(
@@ -528,7 +540,7 @@ def load_trained_model(
     base_model_name: str | None = None,
     is_peft_model: bool = True,
     device: str = "cuda"  # Default to CUDA if available
-) -> tuple[AutoModelForMaskedLM, AutoTokenizer]:
+) -> tuple[PreTrainedModel | PeftModel, PreTrainedTokenizerBase]:
     """
     Load a trained model and tokenizer.
 
@@ -541,41 +553,51 @@ def load_trained_model(
     Returns:
         Tuple of (model, tokenizer)
     """
-    logging.info("="*80)
-    logging.info(f"Loading model from: {model_path}")
-    logging.info("="*80)
+    logger.info("="*80)
+    logger.info(f"Loading model from: {model_path}")
+    logger.info("="*80)
 
     # Load tokenizer
-    logging.info("Loading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
+    logger.info("Loading tokenizer...")
+    tokenizer = cast(
+        PreTrainedTokenizerBase,
+        AutoTokenizer.from_pretrained(model_path),
+    )
 
     if is_peft_model:
         if base_model_name is None:
             raise ValueError("base_model_name required for loading PEFT model")
 
         # Load base model
-        logging.info(f"Loading base model: {base_model_name}")
-        base_model = AutoModelForMaskedLM.from_pretrained(
-            base_model_name,
-            device_map=device,
-            trust_remote_code=True
+        logger.info(f"Loading base model: {base_model_name}")
+        base_model = cast(
+            PreTrainedModel,
+            AutoModelForMaskedLM.from_pretrained(
+                base_model_name,
+                device_map=device,
+                trust_remote_code=True,
+            ),
         )
 
         # Load PEFT adapters
-        logging.info("Loading PEFT adapters...")
-        model = PeftModel.from_pretrained(base_model, model_path)
-        logging.info("PEFT model loaded successfully")
+        logger.info("Loading PEFT adapters...")
+        model = cast(PeftModel,
+                     PeftModel.from_pretrained(base_model, model_path))
+        logger.info("PEFT model loaded successfully")
     else:
         # Load full model
-        logging.info("Loading full model...")
-        model = AutoModelForMaskedLM.from_pretrained(
-            model_path,
-            device_map=device,
-            trust_remote_code=True
+        logger.info("Loading full model...")
+        model = cast(
+            PreTrainedModel,
+            AutoModelForMaskedLM.from_pretrained(
+                model_path,
+                device_map=device,
+                trust_remote_code=True,
+            ),
         )
 
-    logging.info("Model loaded successfully")
-    logging.info("="*80)
+    logger.info("Model loaded successfully")
+    logger.info("="*80)
 
     return model, tokenizer
 
@@ -592,7 +614,7 @@ def generate_embeddings(
     pooling_strategy: str = "mean",
     normalize: bool = True,
     max_length: int = DEFAULT_MAX_LENGTH,
-    device: str | None = None
+    device: str | None = None,
 ) -> np.ndarray:
     """
     Generate embeddings for text using the trained encoder model.
@@ -615,7 +637,7 @@ def generate_embeddings(
         device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"\n------------------------------------\nUsing Device: {device}\n------------------------------------\n")
 
-    logging.info(f"Generating embeddings on device: {device}")
+    logger.info(f"Generating embeddings on device: {device}")
 
     # Load model for embeddings (we need the encoder, not the MLM head)
     tokenizer = AutoTokenizer.from_pretrained(model_path)
@@ -636,7 +658,7 @@ def generate_embeddings(
                 trust_remote_code=True
             )
         except Exception as err:  # noqa: BLE001
-            logging.debug("Could not load base encoder directly: %s", err)
+            logger.debug("Could not load base encoder directly: %s", err)
             # If saved as MLM model, load and extract encoder
             mlm_model = AutoModelForMaskedLM.from_pretrained(
                 model_path,
@@ -702,7 +724,7 @@ def generate_embeddings(
         # Convert to numpy
         embeddings_np = embeddings.cpu().numpy()
 
-    logging.info(f"Generated embeddings shape: {embeddings_np.shape}")
+    logger.info(f"Generated embeddings shape: {embeddings_np.shape}")
 
     return embeddings_np
 
@@ -742,7 +764,7 @@ def get_embedding_info(
         return info
 
     except Exception as err:
-        logging.error(f"Could not load config: {err}")
+        logger.error(f"Could not load config: {err}")
         return {"error": str(err)}
 
 

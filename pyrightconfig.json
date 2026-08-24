@@ -1,0 +1,19 @@
+{
+    "include": [
+        ".",
+        "src",
+        "tests"
+    ],
+    "exclude": [
+        ".venv",
+        "__pycache__",
+        "data",
+        "models",
+        "results"
+    ],
+    "venvPath": ".",
+    "venv": ".venv",
+    "pythonVersion": "3.13",
+    "pythonPlatform": "Linux",
+    "typeCheckingMode": "basic"
+}

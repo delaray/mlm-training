@@ -3,9 +3,8 @@ import pickle
 import argparse
 import logging
 from datetime import date, datetime
-from typing import Union
 import matplotlib.pyplot as plt
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
 
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 from transformers import Trainer, TrainingArguments
@@ -67,15 +66,15 @@ def initialize_logging(model_name, epochs, logs_path=DEFAULT_LOGS_DIRECTORY):
 
     log_filepath = os.path.join(logs_path, log_filename)
 
+    handlers: list[logging.Handler] = [
+        logging.FileHandler(log_filepath, mode='w', encoding='utf-8'),
+        logging.StreamHandler(),
+    ]
     logging.basicConfig(
-        encoding='utf-8',
         level=logging.INFO,
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
-        handlers=[
-            logging.FileHandler(log_filepath, mode='w'),
-            logging.StreamHandler()
-        ]
+        handlers=handlers,
     )
 
     transformers_logging.set_verbosity_info()
@@ -105,8 +104,9 @@ def tokenize_function(examples, tokenizer=DEFAULT_TOKENIZER):
 
 # ------------------------------------------------------------------------------
 
-def prepare_datasets(data_path=DEFAULT_DATA_DIR, 
-                     max_chunks: Union[int | None] = None) -> dict:
+def prepare_datasets(data_path=DEFAULT_DATA_DIR,
+                     max_chunks: int | None = None,
+                     ) -> tuple[DatasetDict | None, list[str], int, list[str]]:
 
     prep_start_time = datetime.now()
     logging.info("Preparing data sets")
@@ -359,14 +359,18 @@ parser.add_argument('--batch-size', metavar='batch_size', type=int, default=16,
 
 def run_model_training(model_name: str, tokenizer, model,
                        data_path=DEFAULT_DATA_DIR,
-                       epochs: Union[int | None] = 30,
+                       epochs: int = 30,
                        batch_size: int = DEFAULT_BATCH_SIZE,
                        learning_rate: float = DEFAULT_LEARNING_RATE,
                        weight_decay: float = DEFAULT_WEIGHT_DECAY,
-                       max_chunks: Union[int | None] = None,
+                       max_chunks: int | None = None,
                        models_dir=DEFAULT_MODELS_DIR):
 
     # device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    trainer = None
+    count = 0
+    problems: list[str] = []
 
     try:
         start_time = datetime.now()
@@ -382,7 +386,7 @@ def run_model_training(model_name: str, tokenizer, model,
         # Train the model with specified parameters
         trainer = train_model(model_name, model, data_collator, datasets,
                               epochs=epochs, batch_size=batch_size,
-                              learning_rate=learning_rate, 
+                              learning_rate=learning_rate,
                               weight_decay=weight_decay)
 
         # Save model, tokenizer & training history
@@ -394,7 +398,7 @@ def run_model_training(model_name: str, tokenizer, model,
 
     except Exception as e:
         print_and_log(f"\nError in run_training_model {model_name}\n{e}\n")
-        return trainer, count, problems 
+        return trainer, count, problems
 
 
 # ------------------------------------------------------------------------------

@@ -10,11 +10,17 @@
 # !pip install ipywidgets
 
 # Standard Python
-from train import prepare_datasets, get_trainer, print_and_log
-from train import DEFAULT_MODEL_NAME, DEFAULT_MODEL, DEFAULT_TOKENIZER
-from train import DEFAULT_DATA_DIR, DEFAULT_MODELS_DIR, DEFAULT_RESULTS_DIR
-from mlm.src.preprocess_data import group_texts
-from mlm.src.document_ingest import DocumentIngest, read_files_directory, flatten_chunks
+from src.train import (
+    DEFAULT_DATA_DIR,
+    DEFAULT_MODELS_DIR,
+    DEFAULT_MODEL_NAME,
+    DEFAULT_RESULTS_DIR,
+    get_trainer,
+    initialize_logging,
+    prepare_datasets,
+    print_and_log,
+)
+from src.ingest import group_texts, read_files_directory
 from transformers import logging as transformers_logging
 from transformers import DataCollatorForLanguageModeling
 from transformers import Trainer, TrainingArguments
@@ -71,6 +77,7 @@ def load_chunks(data_dir=DEFAULT_DATA_DIR):
     print(f'Books folder path: {books_path}')
     book_chunks = read_files_directory(books_path, chunk_size=max_chunk_size,
                                        chunk_overlap=0)
+    book_chunks, _, _ = book_chunks
 
     print(f'\nType of a single book chunk: {type(book_chunks[0])}')
     print(f'Total books chunks: {len(book_chunks)}')
@@ -79,7 +86,8 @@ def load_chunks(data_dir=DEFAULT_DATA_DIR):
     intouch_path = os.path.join(data_dir, 'intouch_documents_consolidated')
     print(f'Intouch folder path: {intouch_path}')
     intouch_chunks = read_files_directory(intouch_path, chunk_size=max_chunk_size,
-                                          chunk_overlap=chunk_overlap)
+                                          chunk_overlap=0)
+    intouch_chunks, _, _ = intouch_chunks
 
     print(f'\nType of a single intouch chunk: {type(intouch_chunks[0])}')
     print(f'Total intouch chunks: {len(intouch_chunks)}')
@@ -127,15 +135,16 @@ def optimize_hyperparameters(model_name, epochs: int = DEFAULT_EPOCHS, batch_siz
                              results_dir=DEFAULT_RESULTS_DIR):
 
     # device = "cpu"
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
     model_path = os.path.join(models_dir, model_name)
 
     tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     print_and_log("\nPreparing data sets...")
-    tokenized_datasets, chunks = prepare_datasets(data_path='data/books',
-                                                  max_chunks=max_chunks)
+    tokenized_datasets, chunks, _, _ = prepare_datasets(
+        data_path='data/books', max_chunks=max_chunks
+    )
+    if tokenized_datasets is None:
+        raise ValueError("No datasets were prepared")
 
     print(f"\nTotal number of chunks loaded: {len(chunks)}\n")
 
@@ -156,8 +165,8 @@ def optimize_hyperparameters(model_name, epochs: int = DEFAULT_EPOCHS, batch_siz
     study = optuna.create_study(
         study_name="hyper-parameter-search", direction="minimize")
 
+    study_start_time = datetime.now()
     try:
-        study_start_time = datetime.now()
         study.optimize(objective, n_trials=trials)
 
     except Exception as e:
@@ -180,11 +189,32 @@ def optimize_hyperparameters(model_name, epochs: int = DEFAULT_EPOCHS, batch_siz
     return study
 
 
+def save_optuna_study(
+    study: optuna.Study,
+    model_name: str,
+    results_dir: str = DEFAULT_RESULTS_DIR,
+) -> None:
+    """Persist an Optuna study for later analysis."""
+    os.makedirs(results_dir, exist_ok=True)
+    study_path = os.path.join(results_dir, f"{model_name}-optuna-study.pkl")
+    with open(study_path, "wb") as study_file:
+        pickle.dump(study, study_file)
+
+
 # ------------------------------------------------------------------------------
 # Main function
 # ------------------------------------------------------------------------------
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Optimize MLM hyperparameters")
+    parser.add_argument("name")
+    parser.add_argument("--trials", type=int, default=DEFAULT_TRIALS)
+    parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS)
+    parser.add_argument("--chunks", type=int, default=None)
+    parser.add_argument("--models-dir", default=DEFAULT_MODELS_DIR)
+    parser.add_argument("--results-dir", default=DEFAULT_RESULTS_DIR)
+    args = parser.parse_args()
+
     model_name, trials, epochs, chunks = args.name, args.trials, args.epochs, args.chunks
     models_dir, results_dir = args.models_dir, args.results_dir
 
