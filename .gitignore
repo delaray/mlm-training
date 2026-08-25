@@ -4,9 +4,8 @@ src/__pycache__/
 tests/__pycache__/
 models/
 results/
-zip/
 books/
 doc/*.md~
 notes/*.md~
 data/mlm/
-bert-base-uncased/
+notebooks/.ipynb_checkpoints/
