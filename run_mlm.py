@@ -120,7 +120,7 @@ def main() -> None:
     model_source = resolve_model_source(args.model_name, models_dir)
 
     model_short_name = args.model_name.rstrip("/").split("/")[-1]
-    run_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    run_timestamp = datetime.now().strftime("%Y%m%d-%H%M%S")  # noqa: DTZ005
     run_name = f"{model_short_name}-mlm-{run_timestamp}"
     output_dir = results_dir / run_name
     save_dir = models_dir / run_name

@@ -38,7 +38,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    logger.basicConfig(level=logger.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     study, best_config = optimize_hyperparameters(
         args.pdf_directory, args.model, trials=args.trials,
         config=load_search_config(args.config),
