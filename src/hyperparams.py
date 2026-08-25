@@ -1,238 +1,193 @@
-# Install dependencies
-# !pip install transformers
-# !pip install datasets
-# !pip install accelerate
-# !pip install langchain_text_splitters
-# !pip install google-cloud-storage
-# !pip install optuna
-# !pip install pymupdf
-# !pip install python-pptx
-# !pip install ipywidgets
+"""Optuna hyperparameter search for masked-language-model training."""
 
-# Standard Python
-from src.train import (
-    DEFAULT_DATA_DIR,
-    DEFAULT_MODELS_DIR,
-    DEFAULT_MODEL_NAME,
-    DEFAULT_RESULTS_DIR,
-    get_trainer,
-    initialize_logging,
-    prepare_datasets,
-    print_and_log,
-)
-from src.ingest import group_texts, read_files_directory
-from transformers import logging as transformers_logging
-from transformers import DataCollatorForLanguageModeling
-from transformers import Trainer, TrainingArguments
-from transformers import AutoTokenizer, AutoModelForMaskedLM
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from datasets import Dataset
-import torch
-import os
+from __future__ import annotations
+
+import gc
+from copy import deepcopy
+from pathlib import Path
+from typing import Any, Mapping, cast
+
 import optuna
-import itertools
-import pickle
-import datetime
-import argparse
-import logging
-from datetime import date, datetime
-from itertools import chain
-from functools import partial
-from typing import List
+import torch
+import yaml
+from datasets import DatasetDict
+from transformers import PreTrainedTokenizerBase
 
-print(f'Current directory: {os.getcwd()}')
-
-# General imports
-
-# Project Imports
-
-
-# Default directories & training parameters
-DEFAULT_DATA_DIR = 'data'
-DEFAULT_RESULTS_DIR = 'results'
-DEFAULT_LOGS_DIRECTORY = 'logs'
-DEFAULT_MODELS_DIR = 'models'
+from src.mlm_trainer import (
+    prepare_mlm_dataset,
+    setup_model_for_mlm_training,
+    train_mlm_model,
+)
 
 DEFAULT_TRIALS = 12
-DEFAULT_EPOCHS = 20
-DEFAULT_BATCH_SIZE = 16
+DEFAULT_EPOCHS = 3
+DEFAULT_MODEL_NAME = "google/electra-small-discriminator"
 
-DEFAULT_LEARNING_RATE = 0.0002
-DEFAULT_WEIGHT_DECAY = 0.004
-
-
-# Loading Chunks
-
-max_token_length = 256
-max_sequence_length = 512
-
-# Don't exceed model's max sequence length
-max_chunk_size = min(max_token_length * 4, max_sequence_length)
-
-
-def load_chunks(data_dir=DEFAULT_DATA_DIR):
-
-    print("\nReading books...")
-    books_path = os.path.join(data_dir, 'books')
-    print(f'Books folder path: {books_path}')
-    book_chunks = read_files_directory(books_path, chunk_size=max_chunk_size,
-                                       chunk_overlap=0)
-    book_chunks, _, _ = book_chunks
-
-    print(f'\nType of a single book chunk: {type(book_chunks[0])}')
-    print(f'Total books chunks: {len(book_chunks)}')
-
-    print("\nReading intouch consolidated documents...")
-    intouch_path = os.path.join(data_dir, 'intouch_documents_consolidated')
-    print(f'Intouch folder path: {intouch_path}')
-    intouch_chunks = read_files_directory(intouch_path, chunk_size=max_chunk_size,
-                                          chunk_overlap=0)
-    intouch_chunks, _, _ = intouch_chunks
-
-    print(f'\nType of a single intouch chunk: {type(intouch_chunks[0])}')
-    print(f'Total intouch chunks: {len(intouch_chunks)}')
-
-    return book_chunks, intouch_chunks
+DEFAULT_CONFIG: dict[str, Any] = {
+    "paths": {"models_dir": "models", "results_dir": "results", "logs_dir": "logs"},
+    "dataset": {
+        "max_length": 512, "chunk_size": 2048, "chunk_overlap": 200,
+        "test_split": 0.1, "max_chunks": None, "use_fast_tokenizer": True,
+    },
+    "model": {
+        "device": "auto", "use_lora": True, "use_qlora": True,
+        "lora_r": 16, "lora_alpha": 32, "lora_dropout": 0.1,
+        "target_modules": None, "load_in_4bit": True, "load_in_8bit": False,
+    },
+    "training": {
+        "epochs": DEFAULT_EPOCHS, "batch_size": 8, "learning_rate": 2e-4,
+        "mlm_probability": 0.15, "weight_decay": 0.01, "warmup_steps": 500,
+        "logging_steps": 100, "save_steps": 1000, "eval_steps": 500,
+        "gradient_accumulation_steps": 4, "fp16": True, "save_total_limit": 1,
+    },
+}
 
 
-# Optuna Objective function
+def load_search_config(config_path: Path | None = None) -> dict[str, Any]:
+    """Return defaults merged with an optional MLM YAML configuration."""
+    config = deepcopy(DEFAULT_CONFIG)
+    if config_path is None:
+        return config
+    with config_path.open(encoding="utf-8") as config_file:
+        overrides = yaml.safe_load(config_file)
+    if not isinstance(overrides, dict):
+        raise ValueError(f"Configuration must be a YAML mapping: {config_path}")
+    for section, values in overrides.items():
+        if section in config and isinstance(config[section], dict):
+            if not isinstance(values, dict):
+                raise ValueError(f"Configuration section '{section}' must be a mapping")
+            config[section].update(values)
+        else:
+            config[section] = values
+    return config
 
-def mlm_objective(trial: optuna.Trial, datasets=None, data_collator=None,
-                  epochs=DEFAULT_EPOCHS, tokenizer=None,
-                  model_name=DEFAULT_MODEL_NAME,
-                  models_dir=DEFAULT_MODELS_DIR):
 
-    model_path = os.path.join(models_dir, model_name)
-    model = AutoModelForMaskedLM.from_pretrained(model_path)
+def resolve_model_source(model_name: str, models_dir: Path) -> str:
+    """Resolve a local model name/path, falling back to a Hub model ID."""
+    direct_path = Path(model_name).expanduser()
+    if direct_path.exists():
+        return str(direct_path.resolve())
+    models_path = (models_dir / model_name).expanduser()
+    if models_path.exists():
+        return str(models_path.resolve())
+    if direct_path.is_absolute():
+        raise FileNotFoundError(f"Local model directory not found: {direct_path}")
+    return model_name
 
-    if tokenizer:
-        # Apparently this solves the error:
-        # "RuntimeError: CUDA error: device-side assert triggered"
-        model.resize_token_embeddings(len(tokenizer))
 
-    training_args = TrainingArguments(
-        output_dir=f"{model_name}-further-trained-{datetime.now()}",
-        eval_strategy="epoch",
-        weight_decay=trial.suggest_float(
-            "weight_decay", log=True, low=0.001, high=0.1),
-        learning_rate=trial.suggest_float(
-            "learning_rate", log=True, low=1e-5, high=2e-4),
-        num_train_epochs=epochs,
-        per_device_train_batch_size=8,
-        per_device_eval_batch_size=8,
-        disable_tqdm=True,
+def prepare_search_dataset(
+    pdf_directory: Path,
+    model_source: str,
+    dataset_config: Mapping[str, Any],
+) -> tuple[DatasetDict, PreTrainedTokenizerBase]:
+    """Read and tokenize PDFs once for reuse by every Optuna trial."""
+    return prepare_mlm_dataset(
+        data_dir=str(pdf_directory), model_name=model_source,
+        max_length=int(dataset_config["max_length"]),
+        chunk_size=int(dataset_config["chunk_size"]),
+        chunk_overlap=int(dataset_config["chunk_overlap"]),
+        test_split=float(dataset_config["test_split"]),
+        max_chunks=dataset_config.get("max_chunks"),
+        use_fast_tokenizer=bool(dataset_config["use_fast_tokenizer"]),
     )
 
-    trainer = get_trainer(model, training_args, datasets, data_collator)
-    result = trainer.train()
 
-    return result.training_loss
-
-
-def optimize_hyperparameters(model_name, epochs: int = DEFAULT_EPOCHS, batch_size: int = 16,
-                             max_chunks=None, trials=DEFAULT_TRIALS,
-                             models_dir=DEFAULT_MODELS_DIR,
-                             results_dir=DEFAULT_RESULTS_DIR):
-
-    # device = "cpu"
-    model_path = os.path.join(models_dir, model_name)
-
-    tokenizer = AutoTokenizer.from_pretrained(model_path)
-
-    print_and_log("\nPreparing data sets...")
-    tokenized_datasets, chunks, _, _ = prepare_datasets(
-        data_path='data/books', max_chunks=max_chunks
-    )
-    if tokenized_datasets is None:
-        raise ValueError("No datasets were prepared")
-
-    print(f"\nTotal number of chunks loaded: {len(chunks)}\n")
-
-    lm_datasets = tokenized_datasets.map(group_texts,
-                                         batched=True,
-                                         batch_size=1000,
-                                         num_proc=4)
-
-    data_collator = DataCollatorForLanguageModeling(
-        tokenizer=tokenizer, mlm_probability=0.15)
-
-    # Define a partial fn to supply tokenizer, model name, datasets, etc., arguments to the obj function
-    objective = partial(mlm_objective, tokenizer=tokenizer, datasets=lm_datasets, data_collator=data_collator,
-                        model_name=model_name, models_dir=models_dir)
-
-    print_and_log("\nRunning hyperparam search...")
-    # Create Optuna study and then run trials
-    study = optuna.create_study(
-        study_name="hyper-parameter-search", direction="minimize")
-
-    study_start_time = datetime.now()
-    try:
-        study.optimize(objective, n_trials=trials)
-
-    except Exception as e:
-        print(f"\nError running Optuna study for {model_name}:\n{e}\n")
-        print(
-            f"\nWARNING: The Optuna study for {model_name} ended prematurely.")
-        print(
-            f"\nOnly completed {len(study.trials)} trials out of {trials} trials.\n")
-
-    # Study duration
-    study_end_time = datetime.now()
-    print_and_log(f"\nThe study took: {study_end_time - study_start_time}")
-
-    # Log the best trial results
-    print_and_log(f"\nBest accuracy: {study.best_trial}")
-
-    # Save the study to be loaded later if desired
-    save_optuna_study(study, model_name, results_dir=results_dir)
-
-    return study
+def create_objective(
+    *, datasets: DatasetDict, tokenizer: PreTrainedTokenizerBase,
+    model_source: str, model_config: Mapping[str, Any],
+    training_config: Mapping[str, Any], results_dir: Path,
+):
+    """Build an Optuna objective that minimizes validation loss."""
+    def objective(trial: optuna.Trial) -> float:
+        learning_rate = trial.suggest_float("learning_rate", 1e-5, 2e-4, log=True)
+        weight_decay = trial.suggest_float("weight_decay", 1e-3, 0.1, log=True)
+        model, _ = setup_model_for_mlm_training(
+            model_name=model_source, device=str(model_config["device"]),
+            use_qlora=bool(model_config["use_qlora"]),
+            use_lora=bool(model_config["use_lora"]),
+            lora_r=int(model_config["lora_r"]),
+            lora_alpha=int(model_config["lora_alpha"]),
+            lora_dropout=float(model_config["lora_dropout"]),
+            target_modules=model_config.get("target_modules"),
+            load_in_4bit=bool(model_config["load_in_4bit"]),
+            load_in_8bit=bool(model_config["load_in_8bit"]),
+        )
+        trainer = None
+        try:
+            trainer = train_mlm_model(
+                model=model, tokenizer=tokenizer, datasets=datasets,
+                output_dir=str(results_dir / f"trial-{trial.number}"),
+                epochs=int(training_config["epochs"]),
+                batch_size=int(training_config["batch_size"]),
+                learning_rate=learning_rate,
+                mlm_probability=float(training_config["mlm_probability"]),
+                weight_decay=weight_decay,
+                warmup_steps=int(training_config["warmup_steps"]),
+                logging_steps=int(training_config["logging_steps"]),
+                save_steps=int(training_config["save_steps"]),
+                eval_steps=int(training_config["eval_steps"]),
+                gradient_accumulation_steps=int(training_config["gradient_accumulation_steps"]),
+                fp16=bool(training_config["fp16"]),
+                save_total_limit=int(training_config["save_total_limit"]),
+                device=str(model_config["device"]),
+            )
+            metrics = trainer.evaluate()
+            if "eval_loss" not in metrics:
+                raise RuntimeError("Trainer evaluation did not return eval_loss")
+            return float(metrics["eval_loss"])
+        finally:
+            del trainer
+            del model
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+    return objective
 
 
-def save_optuna_study(
-    study: optuna.Study,
-    model_name: str,
-    results_dir: str = DEFAULT_RESULTS_DIR,
-) -> None:
-    """Persist an Optuna study for later analysis."""
-    os.makedirs(results_dir, exist_ok=True)
-    study_path = os.path.join(results_dir, f"{model_name}-optuna-study.pkl")
-    with open(study_path, "wb") as study_file:
-        pickle.dump(study, study_file)
+def optimize_hyperparameters(
+    pdf_directory: Path, model_name: str = DEFAULT_MODEL_NAME, *,
+    trials: int = DEFAULT_TRIALS, config: Mapping[str, Any] | None = None,
+) -> tuple[optuna.Study, dict[str, Any]]:
+    """Run the search and return both the study and best runnable config."""
+    if trials < 1:
+        raise ValueError("trials must be at least 1")
+    pdf_directory = pdf_directory.expanduser().resolve()
+    if not pdf_directory.is_dir():
+        raise NotADirectoryError(f"PDF directory not found: {pdf_directory}")
+    if not any(path.is_file() and path.suffix.lower() == ".pdf" for path in pdf_directory.rglob("*")):
+        raise ValueError(f"No PDF files found under: {pdf_directory}")
+
+    resolved_config = deepcopy(dict(config)) if config is not None else load_search_config()
+    paths = cast(dict[str, Any], resolved_config["paths"])
+    dataset_config = cast(dict[str, Any], resolved_config["dataset"])
+    model_config = cast(dict[str, Any], resolved_config["model"])
+    training_config = cast(dict[str, Any], resolved_config["training"])
+    model_source = resolve_model_source(model_name, Path(str(paths["models_dir"])))
+    results_dir = Path(str(paths["results_dir"])) / "optuna"
+    results_dir.mkdir(parents=True, exist_ok=True)
+    datasets, tokenizer = prepare_search_dataset(pdf_directory, model_source, dataset_config)
+
+    study = optuna.create_study(direction="minimize", study_name="mlm-hyperparameters")
+    study.optimize(create_objective(
+        datasets=datasets, tokenizer=tokenizer, model_source=model_source,
+        model_config=model_config, training_config=training_config,
+        results_dir=results_dir,
+    ), n_trials=trials)
+
+    resolved_config["training"].update(study.best_params)
+    resolved_config["optuna"] = {
+        "best_validation_loss": float(study.best_value),
+        "best_trial": study.best_trial.number,
+        "completed_trials": len(study.trials),
+        "model_name": model_name,
+        "pdf_directory": str(pdf_directory),
+    }
+    return study, resolved_config
 
 
-# ------------------------------------------------------------------------------
-# Main function
-# ------------------------------------------------------------------------------
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Optimize MLM hyperparameters")
-    parser.add_argument("name")
-    parser.add_argument("--trials", type=int, default=DEFAULT_TRIALS)
-    parser.add_argument("--epochs", type=int, default=DEFAULT_EPOCHS)
-    parser.add_argument("--chunks", type=int, default=None)
-    parser.add_argument("--models-dir", default=DEFAULT_MODELS_DIR)
-    parser.add_argument("--results-dir", default=DEFAULT_RESULTS_DIR)
-    args = parser.parse_args()
-
-    model_name, trials, epochs, chunks = args.name, args.trials, args.epochs, args.chunks
-    models_dir, results_dir = args.models_dir, args.results_dir
-
-    # Set up Logging configuration and filename
-    logger = initialize_logging(model_name, epochs)
-
-    # Load base model and tokenizer
-    print_and_log("\nLoading model & tokenizer...")
-    model_path = os.path.join(DEFAULT_MODELS_DIR, model_name)
-
-    print_and_log(
-        f"\nStarting Optuna study for mode (model_name) with the following parameters:")
-    print_and_log(f"\nNumber of Optuna trials: {trials}")
-    print_and_log(f"\nNumber of epochs for each trial: {epochs}")
-    print_and_log(
-        f"\nNumber of data chunks for each trial: {chunks or 'All Chunks'}")
-
-    optimize_hyperparameters(
-        model_name=model_name, trials=trials, epochs=epochs, batch_size=16, max_chunks=chunks,
-        models_dir=models_dir, results_dir=results_dir
-    )
+def save_best_config(config: Mapping[str, Any], output_path: Path) -> None:
+    """Write the winning configuration as portable, safe YAML."""
+    output_path = output_path.expanduser()
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with output_path.open("w", encoding="utf-8") as config_file:
+        yaml.safe_dump(dict(config), config_file, sort_keys=False)
