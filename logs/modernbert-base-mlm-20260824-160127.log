@@ -1,0 +1,63 @@
+2026-08-24 16:01:27,939 - root - INFO - MLM run: modernbert-base-mlm-20260824-160127
+2026-08-24 16:01:27,940 - root - INFO - Model source: /home/pierre/projects/models/modernbert-base
+2026-08-24 16:01:27,940 - root - INFO - PDF directory: /home/pierre/education/books/Computer Science/Artificial Intelligence/RAG
+2026-08-24 16:01:27,940 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:27,940 - mlm_trainer - INFO - Starting MLM Dataset Preparation
+2026-08-24 16:01:27,940 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:27,940 - mlm_trainer - INFO - Loading tokenizer from: /home/pierre/projects/models/modernbert-base
+2026-08-24 16:01:28,304 - mlm_trainer - INFO - Reading documents from: /home/pierre/education/books/Computer Science/Artificial Intelligence/RAG
+2026-08-24 16:01:34,982 - mlm_trainer - INFO - Successfully read 8 files
+2026-08-24 16:01:34,982 - mlm_trainer - INFO - Total chunks available: 1224
+2026-08-24 16:01:35,007 - mlm_trainer - INFO - Splitting dataset (test_split=0.1)
+2026-08-24 16:01:35,016 - mlm_trainer - INFO - Tokenizing dataset...
+2026-08-24 16:01:38,182 - mlm_trainer - INFO - Training samples: 1101
+2026-08-24 16:01:38,183 - mlm_trainer - INFO - Test samples: 123
+2026-08-24 16:01:38,183 - mlm_trainer - INFO - Max sequence length: 512
+2026-08-24 16:01:38,183 - mlm_trainer - INFO - Dataset preparation completed in 0:00:10.242483
+2026-08-24 16:01:38,183 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,187 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,187 - mlm_trainer - INFO - Selected training device: cpu
+2026-08-24 16:01:38,187 - mlm_trainer - INFO - Setting up model for MLM training
+2026-08-24 16:01:38,187 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,188 - mlm_trainer - INFO - Using local model directory: /home/pierre/projects/models/modernbert-base
+2026-08-24 16:01:38,188 - mlm_trainer - WARNING - QLoRA quantization requires CUDA; loading the model in FP32 for CPU training instead.
+2026-08-24 16:01:38,188 - mlm_trainer - INFO - Loading model without quantization
+2026-08-24 16:01:38,481 - mlm_trainer - INFO - Model loaded without quantization
+2026-08-24 16:01:38,481 - mlm_trainer - INFO - Applying LoRA configuration
+2026-08-24 16:01:38,482 - mlm_trainer - INFO - Auto-detected target modules: ['Wqkv', 'Wo', 'Wi']
+2026-08-24 16:01:38,716 - mlm_trainer - INFO - LoRA applied successfully
+2026-08-24 16:01:38,716 - mlm_trainer - INFO - Model setup complete for cpu training
+2026-08-24 16:01:38,717 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,717 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,717 - mlm_trainer - INFO - Starting MLM Training
+2026-08-24 16:01:38,717 - mlm_trainer - INFO - ================================================================================
+2026-08-24 16:01:38,718 - mlm_trainer - INFO - Training configuration:
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Epochs: 10
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Batch size: 8
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Learning rate: 0.0002
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   MLM probability: 0.15
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Gradient accumulation: 4
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Effective batch size: 32
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   FP16: False
+2026-08-24 16:01:38,718 - mlm_trainer - INFO -   Device: cpu
+2026-08-24 16:01:38,864 - mlm_trainer - INFO - Starting training...
+2026-08-25 05:02:51,195 - mlm_trainer - INFO - Training completed!
+2026-08-25 05:02:51,198 - mlm_trainer - INFO - Training loss: 1.1295
+2026-08-25 05:02:51,199 - mlm_trainer - INFO - Evaluating model...
+2026-08-25 05:06:46,269 - mlm_trainer - INFO - Evaluation results:
+2026-08-25 05:06:46,270 - mlm_trainer - INFO -   eval_loss: 0.9368
+2026-08-25 05:06:46,270 - mlm_trainer - INFO -   eval_runtime: 235.0526
+2026-08-25 05:06:46,270 - mlm_trainer - INFO -   eval_samples_per_second: 0.5230
+2026-08-25 05:06:46,270 - mlm_trainer - INFO -   eval_steps_per_second: 0.0680
+2026-08-25 05:06:46,271 - mlm_trainer - INFO -   epoch: 10.0000
+2026-08-25 05:06:46,271 - mlm_trainer - INFO - Total training time: 13:05:07.553890
+2026-08-25 05:06:46,271 - mlm_trainer - INFO - ================================================================================
+2026-08-25 05:06:46,274 - mlm_trainer - INFO - ================================================================================
+2026-08-25 05:06:46,274 - mlm_trainer - INFO - Saving model to: models/modernbert-base-mlm-20260824-160127
+2026-08-25 05:06:46,275 - mlm_trainer - INFO - ================================================================================
+2026-08-25 05:06:46,277 - mlm_trainer - INFO - Saving PEFT (LoRA) adapters...
+2026-08-25 05:06:46,402 - mlm_trainer - INFO - PEFT adapters saved to: models/modernbert-base-mlm-20260824-160127
+2026-08-25 05:06:46,403 - mlm_trainer - INFO - Saving tokenizer...
+2026-08-25 05:06:46,489 - mlm_trainer - INFO - Model and tokenizer saved successfully to: models/modernbert-base-mlm-20260824-160127
+2026-08-25 05:06:46,491 - mlm_trainer - INFO - ================================================================================
+2026-08-25 05:06:46,491 - root - INFO - Training artifacts saved to: models/modernbert-base-mlm-20260824-160127

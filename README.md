@@ -1,255 +1,135 @@
-# MLM Training Project
+# Domain-Adaptive Masked Language Modeling
 
-Complete pipeline for training encoder models using Masked Language Modeling (MLM) with PEFT optimization (LoRA/QLoRA).
+> An end-to-end Python pipeline for adapting encoder models to specialist corpora with masked language modeling (MLM), parameter-efficient fine-tuning, Optuna optimization, and quantitative embedding evaluation.
 
-## 🚀 Quick Start
+[![Python 3.12+](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Transformers](https://img.shields.io/badge/Transformers-5.x-FFD21E?logo=huggingface&logoColor=black)](https://huggingface.co/docs/transformers/)
+[![Optuna](https://img.shields.io/badge/Optimization-Optuna-4B8BBE)](https://optuna.org/)
+[![PEFT](https://img.shields.io/badge/Fine--tuning-LoRA%20%7C%20QLoRA-8A2BE2)](https://huggingface.co/docs/peft/)
+
+This project turns a directory of PDF documents into a domain-adapted encoder. It covers document extraction, deterministic train/evaluation splitting, dynamic token masking, LoRA or QLoRA training, hyperparameter search, model persistence, and embedding generation. The repository is designed both as a practical training tool and as a transparent ML engineering case study.
+
+## Why this project matters
+
+General-purpose encoders often underrepresent specialist vocabulary and relationships. Continued MLM pretraining exposes an encoder to unlabeled domain text while preserving the original self-supervised objective. The resulting representation can improve retrieval, clustering, semantic search, and downstream supervised tasks—but improvement is measured, not assumed.
+
+```mermaid
+flowchart LR
+    A[PDF corpus] --> B[Text extraction]
+    B --> C[Chunking and tokenization]
+    C --> D[Train / validation split]
+    D --> E{Experiment path}
+    E -->|Tune| F[Optuna trials]
+    E -->|Train| G[MLM + LoRA / QLoRA]
+    F --> H[Best YAML config]
+    H --> G
+    G --> I[Adapter or model artifacts]
+    I --> J[Embeddings]
+    J --> K[Similarity and retrieval evaluation]
+```
+
+## Engineering highlights
+
+| Capability | Implementation | Professional value |
+|---|---|---|
+| Document ingestion | Recursive PDF/PPTX extraction and overlap-aware chunking | Converts unstructured corpora into repeatable training inputs |
+| Domain adaptation | Dynamic masked language modeling | Learns specialist language without labeled examples |
+| Efficient tuning | LoRA; CUDA-aware 4-bit QLoRA fallback | Makes experimentation feasible on constrained hardware |
+| Experiment selection | Optuna search over learning rate and weight decay | Replaces guesswork with validation-driven selection |
+| Configuration | Versionable YAML plus CLI entry points | Separates experiment policy from application code |
+| Evaluation | Validation loss, cosine similarity, class-separation metrics, PCA plots | Tests whether representation quality actually changes |
+| Operational safeguards | CPU/CUDA selection, logging, checkpoints, model-path validation | Supports reproducible local and workstation runs |
+
+## Repository map
+
+```text
+.
+├── configs/mlm_training.yaml      # Reproducible experiment configuration
+├── docs/                          # Technique notes and operating guides
+├── notebooks/                     # Laptop-friendly, synthetic demonstrations
+├── src/
+│   ├── ingest.py                  # PDF/PPTX extraction and chunking
+│   ├── mlm_trainer.py             # Dataset, PEFT training, persistence, embeddings
+│   ├── hyperparams.py             # Optuna study and best-config generation
+│   ├── sft_data.py                # Optional synthetic QA-data workflow
+│   └── storage.py                 # Optional Google Cloud Storage helpers
+├── run_mlm.py                     # Production-style training CLI
+├── run_optuna.py                  # Hyperparameter-search CLI
+└── tests/                         # Environment and component checks
+```
+
+## Quick start
 
 ```bash
-# 1. Install dependencies
+git clone <your-repository-url>
+cd mlm-training
 uv sync
 
-# 2. Install PyTorch with CUDA support (IMPORTANT!)
-install_pytorch_cuda.bat
-# Or manually:
-# uv pip install --index-url https://download.pytorch.org/whl/cu124 torch==2.6.0+cu124 torchvision==0.21.0+cu124 torchaudio==2.6.0+cu124
+# Put one or more PDFs in data/books, then tune two core optimizer parameters.
+uv run python run_optuna.py data/books configs/best.yaml \
+  --model microsoft/deberta-v3-xsmall \
+  --trials 8 \
+  --config configs/mlm_training.yaml
 
-# 3. Activate virtual environment
-.venv\Scripts\activate
-
-# 4. Verify setup
-python test_imports.py
-
-# 5. Download a model
-python download_models.py --model deberta-v3-base
-
-# 6. Add your PDF books to data/books/
-
-# 7. Start training
-python example_mlm_training.py
+# Train from the selected configuration.
+uv run python run_mlm.py microsoft/deberta-v3-xsmall data/books \
+  --config configs/best.yaml
 ```
 
-> ⚠️ **Critical**: Always use matching CUDA versions with `+cu124` suffix. Run `install_pytorch_cuda.bat` after any `uv sync` operation. See [CUDA_SETUP.md](CUDA_SETUP.md) for details.
+[`microsoft/deberta-v3-xsmall`](https://huggingface.co/microsoft/deberta-v3-xsmall) is used in the tutorials because its backbone has 22M parameters, making it a more approachable DeBERTa-family baseline for laptop demonstrations. GPU acceleration is recommended for portfolio-scale experiments. The model is downloaded from Hugging Face on first use.
 
-## 📚 Documentation
+For CUDA, quantization, model download, configuration, and output details, see the [setup and run guide](docs/setup-and-run.md).
 
-- **[RTX_5090_COMPATIBILITY.md](RTX_5090_COMPATIBILITY.md)** - ⭐ RTX 5090 / Blackwell GPU guide
-- **[CUDA_SETUP.md](CUDA_SETUP.md)** - GPU/CUDA setup and troubleshooting
-- **[SUMMARY_AND_INSTRUCTIONS.md](SUMMARY_AND_INSTRUCTIONS.md)** - Complete documentation and guide
-- **[QUICK_REFERENCE.md](QUICK_REFERENCE.md)** - Quick command reference
-- **[MODEL_RECOMMENDATIONS.md](MODEL_RECOMMENDATIONS.md)** - Model selection guide
+## Demonstrations
 
-## 🎯 Features
+| Notebook | Question answered |
+|---|---|
+| [01_optuna_hyperparameter_search.ipynb](notebooks/01_optuna_hyperparameter_search.ipynb) | How are MLM hyperparameters selected from validation loss? |
+| [02_animal_domain_mlm.ipynb](notebooks/02_animal_domain_mlm.ipynb) | Does animal-domain MLM improve held-out semantic separation over the original encoder? |
 
-✅ **Dataset Preparation** - Automatic PDF processing and tokenization  
-✅ **PEFT Training** - Memory-efficient LoRA/QLoRA optimization  
-✅ **Model Management** - Easy save/load of trained models  
-✅ **Embedding Generation** - Generate text embeddings for downstream tasks  
-✅ **Multiple Models** - Support for DeBERTa, ELECTRA, RoBERTa, and more  
+Both notebooks generate their animal corpus in memory, run on CPU, and expose `FAST_MODE` controls. The second notebook compares the untouched and adapted encoders using the same held-out sentence pairs, reports ROC AUC and positive/negative similarity margin, and visualizes similarity distributions and PCA projections. A small synthetic benchmark is a demonstration—not evidence of production generalization.
 
-## 📁 Project Structure
+## Documentation
 
-```
-mlm-training/
-├── src/
-│   ├── mlm_trainer.py         # Main MLM training module ⭐
-│   ├── ingest.py               # PDF document ingestion
-│   └── ...
-├── example_mlm_training.py    # Complete working example ⭐
-├── download_models.py         # Model download utility ⭐
-├── test_setup.py              # Setup verification script ⭐
-├── data/books/                # Place your PDF books here
-├── models/                    # Downloaded & trained models
-└── results/                   # Training outputs & checkpoints
-```
+| Guide | Contents |
+|---|---|
+| [Setup and run](docs/setup-and-run.md) | Installation, data layout, tuning, training, and troubleshooting |
+| [Data ingestion](docs/data-ingestion.md) | PDF extraction, chunking, leakage risks, and scalable extensions |
+| [Masked language modeling](docs/masked-language-modeling.md) | Objective, dynamic masking, and continued pretraining |
+| [LoRA and QLoRA](docs/lora-and-qlora.md) | Adapter math, quantization path, trade-offs, and improvements |
+| [Optuna optimization](docs/optuna-hyperparameter-search.md) | Search space, objective, reproducibility, pruning, and storage |
+| [Embedding evaluation](docs/embedding-evaluation.md) | Pooling, similarity metrics, baselines, and experiment design |
+| [Synthetic data](docs/synthetic-data.md) | Animal demo generation and the optional Ollama QA pipeline |
+| [Model lifecycle](docs/model-lifecycle.md) | Saving, loading, artifact lineage, and deployment extensions |
+| [Cloud storage](docs/cloud-storage.md) | Optional GCS synchronization, environment safeguards, and MLOps extensions |
 
-## 🔧 Requirements
+## Configuration
 
-- Python 3.12+
-- CUDA-capable GPU (recommended: 24GB VRAM)
-- Windows 11 / Linux / macOS
+| Section | Examples |
+|---|---|
+| `paths` | Model, result, and log directories |
+| `dataset` | Token length, chunk size/overlap, split, sample cap |
+| `model` | Device, LoRA ranks, target modules, 4/8-bit loading |
+| `training` | Epochs, batch size, optimizer values, accumulation, FP16 |
 
-## 📦 Key Dependencies
+Optuna writes the winning values into `training` and adds an `optuna` provenance section. The output remains consumable by `run_mlm.py`.
 
-- `transformers` - HuggingFace Transformers
-- `peft` - Parameter-Efficient Fine-Tuning (LoRA/QLoRA)
-- `bitsandbytes` - Quantization for QLoRA
-- `torch` - PyTorch deep learning framework
-- `datasets` - HuggingFace Datasets
+## Evaluation philosophy
 
-## 🎓 What is MLM Training?
+Domain adaptation can lower MLM loss while degrading a downstream representation. A credible experiment therefore compares against the unchanged base encoder on a frozen test set and reports uncertainty across multiple seeds. The included notebooks establish this pattern; a production study should add retrieval metrics such as Recall@k and nDCG, multiple corpora, stronger embedding baselines, and confidence intervals.
 
-Masked Language Modeling is a self-supervised learning technique where:
-1. Random tokens in text are masked (15%)
-2. Model learns to predict masked tokens
-3. Improves model's understanding of context and semantics
+## Current limitations and roadmap
 
-This is the same technique used to pre-train BERT, RoBERTa, and DeBERTa.
+- PDF reading is text-first and does not yet include OCR or layout reconstruction.
+- Optuna currently tunes learning rate and weight decay; batch size, masking rate, adapter rank, schedulers, and pruning are natural extensions.
+- The training split is chunk-level; document-level splitting should be used to prevent near-duplicate leakage in formal evaluations.
+- MLM-adapted hidden states are not guaranteed to be optimal sentence embeddings. Contrastive post-training is a valuable second stage.
+- Experiment tracking and artifact manifests can be strengthened with MLflow, Weights & Biases, or an internal registry.
 
-## 💡 Why Use This?
+## Responsible use
 
-- **Domain Adaptation**: Fine-tune models on your specific domain (books, technical docs, etc.)
-- **Better Embeddings**: Generate domain-specific embeddings for RAG, search, clustering
-- **Memory Efficient**: QLoRA uses 4x less memory than full fine-tuning
-- **Production Ready**: Professional code with logging, checkpointing, and error handling
+Only train on documents you are authorized to process. Inspect extracted text for personal or confidential information, record model/data licenses, and evaluate domain bias before deployment. Quantitative gains on synthetic data should never be presented as real-world performance.
 
-## 📊 Supported Models
+## License
 
-| Model | Parameters | Embedding Dim | Recommended |
-|-------|-----------|---------------|-------------|
-| DeBERTa-v3-base | 184M | 768 | ⭐ Yes |
-| ELECTRA-base | 110M | 768 | ⭐ Yes |
-| RoBERTa-base | 125M | 768 | ⭐ Yes |
-| DeBERTa-v3-large | 434M | 1024 | Advanced |
-
-## 🔬 Example Usage
-
-### Train a Model
-```python
-from src.mlm_trainer import (
-    prepare_mlm_dataset,
-    setup_model_for_mlm_training,
-    train_mlm_model,
-    save_trained_model
-)
-
-# Prepare dataset from PDFs
-datasets, tokenizer = prepare_mlm_dataset(
-    data_dir="data/books",
-    model_name="models/deberta-v3-base"
-)
-
-# Setup model with QLoRA
-model, _ = setup_model_for_mlm_training(
-    model_name="models/deberta-v3-base",
-    use_qlora=True,
-    use_lora=True
-)
-
-# Train
-trainer = train_mlm_model(
-    model=model,
-    tokenizer=tokenizer,
-    datasets=datasets,
-    epochs=10
-)
-
-# Save
-save_trained_model(
-    model=model,
-    tokenizer=tokenizer,
-    save_path="models/my-trained-model",
-    is_peft_model=True
-)
-```
-
-### Generate Embeddings
-```python
-from src.mlm_trainer import generate_embeddings
-
-texts = ["Your text here", "Another text"]
-
-embeddings = generate_embeddings(
-    text=texts,
-    model_path="models/my-trained-model",
-    base_model_name="models/deberta-v3-base",
-    is_peft_model=True,
-    normalize=True
-)
-
-# Use embeddings for similarity, clustering, RAG, etc.
-```
-
-## 🎯 Hardware Requirements
-
-**Recommended**:
-- GPU: 24GB VRAM (e.g., RTX 4090, A5000)
-- RAM: 32GB+
-- Storage: 50GB+ for models and datasets
-
-**Minimum** (with QLoRA):
-- GPU: 8GB VRAM (e.g., RTX 3060)
-- RAM: 16GB
-- Storage: 20GB
-
-## 📈 Training Time Estimates
-
-On 24GB GPU with QLoRA:
-- DeBERTa-v3-base, 10k samples, 10 epochs: ~2-3 hours
-- ELECTRA-base, 10k samples, 10 epochs: ~1.5-2 hours
-
-## 🔧 Troubleshooting
-
-**Out of Memory?**
-```python
-# Use these settings
-use_qlora=True
-load_in_4bit=True
-batch_size=4
-gradient_accumulation_steps=8
-```
-
-**Slow Training?**
-```python
-# Enable FP16
-fp16=True
-```
-
-**Import Errors?**
-```bash
-uv sync --force
-```
-
-## 📖 Learn More
-
-- [Complete Documentation](SUMMARY_AND_INSTRUCTIONS.md)
-- [Model Selection Guide](MODEL_RECOMMENDATIONS.md)
-- [Quick Reference](QUICK_REFERENCE.md)
-
-## 🤝 Contributing
-
-This is a personal project, but feel free to adapt it for your needs!
-
-## 📝 License
-
-See project license file.
-
-## 🎉 Ready to Start?
-
-```bash
-uv run python test_setup.py     # Verify setup
-uv run python example_mlm_training.py  # Start training!
-```
-
----
-
-**Project Status**: ✅ Production Ready  
-**Last Updated**: February 2, 2026  
-**Hardware Target**: Windows 11, 24GB GPU, 200GB RAM
-
-------------------------------------------------------------------------------
-
-# Installing Pytorch with CUDA 12.8 
-
-# 1. Uninstall current PyTorch, torchvision, torchaudio
-pip uninstall torch torchvision torchaudio -y
-
-# 2. Clear pip cache (optional but helps avoid old wheel conflicts)
-pip cache purge
-
-# 3. Install nightly PyTorch for CUDA 12.8
-pip install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu128
-
-# 4. Verify installation
-python -c "import torch; print(torch.__version__); print(torch.version.cuda); print(torch.cuda.is_available()); print(torch.cuda.get_device_name(0))"
-
-## Tensorboard
-
-I've enabled TensorBoard in mlm_trainer.py:327-330. The changes include:
-
-Re-enabled TensorBoard reporting - Changed report_to back to ["tensorboard"]
-Set logging directory - Added environment variable TENSORBOARD_LOGGING_DIR to avoid the deprecation warning
-Now your training will log to TensorBoard. To view the training progress, open a new terminal and run:
-
-
-    tensorboard --logdir results\training-deberta-v3-base-20260220\logs
-
+Add the license appropriate for your intended portfolio and reuse terms before publishing.
