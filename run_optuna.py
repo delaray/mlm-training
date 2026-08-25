@@ -6,10 +6,19 @@ import argparse
 import logging
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 from src.hyperparams import (
-    DEFAULT_MODEL_NAME, DEFAULT_TRIALS, load_search_config,
-    optimize_hyperparameters, save_best_config,
+    DEFAULT_MODEL_NAME,
+    DEFAULT_TRIALS,
+    load_search_config,
+    optimize_hyperparameters,
+    save_best_config,
 )
+
+# Load environment variables from .env file
+load_dotenv(override=True)
+logger: logging.Logger = logging.getLogger("hyperparams")
 
 
 def parse_args() -> argparse.Namespace:
@@ -29,14 +38,14 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+    logger.basicConfig(level=logger.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
     study, best_config = optimize_hyperparameters(
         args.pdf_directory, args.model, trials=args.trials,
         config=load_search_config(args.config),
     )
     save_best_config(best_config, args.output_config)
-    logging.info("Best validation loss: %.6f", study.best_value)
-    logging.info("Best configuration saved to: %s", args.output_config)
+    logger.info("Best validation loss: %.6f", study.best_value)
+    logger.info("Best configuration saved to: %s", args.output_config)
 
 
 if __name__ == "__main__":

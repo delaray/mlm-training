@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any, cast
 
 import yaml
+from dotenv import load_dotenv
 
 from src.mlm_trainer import (
     prepare_mlm_dataset,
@@ -17,6 +18,10 @@ from src.mlm_trainer import (
     setup_model_for_mlm_training,
     train_mlm_model,
 )
+
+# Load environment variables from .env file
+load_dotenv(override=True)
+logger: logging.Logger = logging.getLogger("hyperparams")
 
 
 DEFAULT_CONFIG_PATH = Path("configs/mlm_training.yaml")
@@ -124,11 +129,11 @@ def main() -> None:
     output_dir.mkdir(parents=True, exist_ok=True)
     save_dir.mkdir(parents=True, exist_ok=True)
     logs_dir.mkdir(parents=True, exist_ok=True)
-    setup_logging(str(log_file), level=logging.INFO)
+    setup_logging(str(log_file), level=logger.INFO)
 
-    logging.info("MLM run: %s", run_name)
-    logging.info("Model source: %s", model_source)
-    logging.info("PDF directory: %s", pdf_directory)
+    logger.info("MLM run: %s", run_name)
+    logger.info("Model source: %s", model_source)
+    logger.info("PDF directory: %s", pdf_directory)
 
     datasets, tokenizer = prepare_mlm_dataset(
         data_dir=str(pdf_directory),
@@ -182,7 +187,7 @@ def main() -> None:
         save_path=str(save_dir),
         is_peft_model=bool(model_config["use_lora"]),
     )
-    logging.info("Training artifacts saved to: %s", save_dir)
+    logger.info("Training artifacts saved to: %s", save_dir)
 
 
 if __name__ == "__main__":
