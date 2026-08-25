@@ -1,0 +1,200 @@
+{"text_a": "A researcher watches a otter in the river.", "text_b": "Observers recognize this mammal by how it uses stones as tools.", "label": 1}
+{"text_a": "A researcher watches a camel in the arid desert.", "text_b": "Observers recognize this mammal by how it conserves water efficiently.", "label": 1}
+{"text_a": "A researcher watches a penguin in the cold coast.", "text_b": "Observers recognize this bird by how it swims using flippers.", "label": 1}
+{"text_a": "A researcher watches a owl in the woodland.", "text_b": "Observers recognize this bird by how it flies almost silently.", "label": 1}
+{"text_a": "A researcher watches a frog in the freshwater wetland.", "text_b": "Observers recognize this amphibian by how it develops from a tadpole.", "label": 1}
+{"text_a": "A researcher watches a turtle in the warm coast.", "text_b": "Observers recognize this reptile by how it has a protective shell.", "label": 1}
+{"text_a": "A researcher watches a bee in the flowering meadow.", "text_b": "Observers recognize this insect by how it pollinates many plants.", "label": 1}
+{"text_a": "A researcher watches a wolf in the temperate forest.", "text_b": "Observers recognize this mammal by how it hunts cooperatively.", "label": 1}
+{"text_a": "A researcher watches a dolphin in the open ocean.", "text_b": "Observers recognize this mammal by how it communicates with whistles.", "label": 1}
+{"text_a": "A researcher watches a eagle in the rocky mountain.", "text_b": "Observers recognize this bird by how it soars on thermal currents.", "label": 1}
+{"text_a": "A researcher watches a beaver in the woodland stream.", "text_b": "Observers recognize this mammal by how it builds dams from branches.", "label": 1}
+{"text_a": "A researcher watches a octopus in the rocky reef.", "text_b": "Observers recognize this mollusk by how it changes color for camouflage.", "label": 1}
+{"text_a": "The otter searches its habitat for fish and shellfish.", "text_b": "Its diet includes fish and shellfish, and it lives near the river.", "label": 1}
+{"text_a": "The camel searches its habitat for thorny shrubs.", "text_b": "Its diet includes thorny shrubs, and it lives near the arid desert.", "label": 1}
+{"text_a": "The penguin searches its habitat for krill and fish.", "text_b": "Its diet includes krill and fish, and it lives near the cold coast.", "label": 1}
+{"text_a": "The owl searches its habitat for mice and insects.", "text_b": "Its diet includes mice and insects, and it lives near the woodland.", "label": 1}
+{"text_a": "The frog searches its habitat for small insects.", "text_b": "Its diet includes small insects, and it lives near the freshwater wetland.", "label": 1}
+{"text_a": "The turtle searches its habitat for seagrass and algae.", "text_b": "Its diet includes seagrass and algae, and it lives near the warm coast.", "label": 1}
+{"text_a": "The bee searches its habitat for nectar and pollen.", "text_b": "Its diet includes nectar and pollen, and it lives near the flowering meadow.", "label": 1}
+{"text_a": "The wolf searches its habitat for deer and rabbits.", "text_b": "Its diet includes deer and rabbits, and it lives near the temperate forest.", "label": 1}
+{"text_a": "The dolphin searches its habitat for fish and squid.", "text_b": "Its diet includes fish and squid, and it lives near the open ocean.", "label": 1}
+{"text_a": "The eagle searches its habitat for small mammals.", "text_b": "Its diet includes small mammals, and it lives near the rocky mountain.", "label": 1}
+{"text_a": "The beaver searches its habitat for bark and aquatic plants.", "text_b": "Its diet includes bark and aquatic plants, and it lives near the woodland stream.", "label": 1}
+{"text_a": "The octopus searches its habitat for crabs and mollusks.", "text_b": "Its diet includes crabs and mollusks, and it lives near the rocky reef.", "label": 1}
+{"text_a": "Field notes describe a otter near the river.", "text_b": "The species survives in the river and uses stones as tools.", "label": 1}
+{"text_a": "Field notes describe a camel near the arid desert.", "text_b": "The species survives in the arid desert and conserves water efficiently.", "label": 1}
+{"text_a": "Field notes describe a penguin near the cold coast.", "text_b": "The species survives in the cold coast and swims using flippers.", "label": 1}
+{"text_a": "Field notes describe a owl near the woodland.", "text_b": "The species survives in the woodland and flies almost silently.", "label": 1}
+{"text_a": "Field notes describe a frog near the freshwater wetland.", "text_b": "The species survives in the freshwater wetland and develops from a tadpole.", "label": 1}
+{"text_a": "Field notes describe a turtle near the warm coast.", "text_b": "The species survives in the warm coast and has a protective shell.", "label": 1}
+{"text_a": "Field notes describe a bee near the flowering meadow.", "text_b": "The species survives in the flowering meadow and pollinates many plants.", "label": 1}
+{"text_a": "Field notes describe a wolf near the temperate forest.", "text_b": "The species survives in the temperate forest and hunts cooperatively.", "label": 1}
+{"text_a": "Field notes describe a dolphin near the open ocean.", "text_b": "The species survives in the open ocean and communicates with whistles.", "label": 1}
+{"text_a": "Field notes describe a eagle near the rocky mountain.", "text_b": "The species survives in the rocky mountain and soars on thermal currents.", "label": 1}
+{"text_a": "Field notes describe a beaver near the woodland stream.", "text_b": "The species survives in the woodland stream and builds dams from branches.", "label": 1}
+{"text_a": "Field notes describe a octopus near the rocky reef.", "text_b": "The species survives in the rocky reef and changes color for camouflage.", "label": 1}
+{"text_a": "A wildlife camera records a otter at dusk.", "text_b": "This wild mammal often feeds on fish and shellfish.", "label": 1}
+{"text_a": "A wildlife camera records a camel at dusk.", "text_b": "This wild mammal often feeds on thorny shrubs.", "label": 1}
+{"text_a": "A wildlife camera records a penguin at dusk.", "text_b": "This wild bird often feeds on krill and fish.", "label": 1}
+{"text_a": "A wildlife camera records a owl at dusk.", "text_b": "This wild bird often feeds on mice and insects.", "label": 1}
+{"text_a": "A wildlife camera records a frog at dusk.", "text_b": "This wild amphibian often feeds on small insects.", "label": 1}
+{"text_a": "A wildlife camera records a turtle at dusk.", "text_b": "This wild reptile often feeds on seagrass and algae.", "label": 1}
+{"text_a": "A wildlife camera records a bee at dusk.", "text_b": "This wild insect often feeds on nectar and pollen.", "label": 1}
+{"text_a": "A wildlife camera records a wolf at dusk.", "text_b": "This wild mammal often feeds on deer and rabbits.", "label": 1}
+{"text_a": "A wildlife camera records a dolphin at dusk.", "text_b": "This wild mammal often feeds on fish and squid.", "label": 1}
+{"text_a": "A wildlife camera records a eagle at dusk.", "text_b": "This wild bird often feeds on small mammals.", "label": 1}
+{"text_a": "A wildlife camera records a beaver at dusk.", "text_b": "This wild mammal often feeds on bark and aquatic plants.", "label": 1}
+{"text_a": "A wildlife camera records a octopus at dusk.", "text_b": "This wild mollusk often feeds on crabs and mollusks.", "label": 1}
+{"text_a": "This observation follows a otter feeding on fish and shellfish.", "text_b": "A typical individual uses stones as tools in its natural range.", "label": 1}
+{"text_a": "This observation follows a camel feeding on thorny shrubs.", "text_b": "A typical individual conserves water efficiently in its natural range.", "label": 1}
+{"text_a": "This observation follows a penguin feeding on krill and fish.", "text_b": "A typical individual swims using flippers in its natural range.", "label": 1}
+{"text_a": "This observation follows a owl feeding on mice and insects.", "text_b": "A typical individual flies almost silently in its natural range.", "label": 1}
+{"text_a": "This observation follows a frog feeding on small insects.", "text_b": "A typical individual develops from a tadpole in its natural range.", "label": 1}
+{"text_a": "This observation follows a turtle feeding on seagrass and algae.", "text_b": "A typical individual has a protective shell in its natural range.", "label": 1}
+{"text_a": "This observation follows a bee feeding on nectar and pollen.", "text_b": "A typical individual pollinates many plants in its natural range.", "label": 1}
+{"text_a": "This observation follows a wolf feeding on deer and rabbits.", "text_b": "A typical individual hunts cooperatively in its natural range.", "label": 1}
+{"text_a": "This observation follows a dolphin feeding on fish and squid.", "text_b": "A typical individual communicates with whistles in its natural range.", "label": 1}
+{"text_a": "This observation follows a eagle feeding on small mammals.", "text_b": "A typical individual soars on thermal currents in its natural range.", "label": 1}
+{"text_a": "This observation follows a beaver feeding on bark and aquatic plants.", "text_b": "A typical individual builds dams from branches in its natural range.", "label": 1}
+{"text_a": "This observation follows a octopus feeding on crabs and mollusks.", "text_b": "A typical individual changes color for camouflage in its natural range.", "label": 1}
+{"text_a": "A naturalist identifies a otter in the wild.", "text_b": "Researchers classify it as a mammal associated with the river.", "label": 1}
+{"text_a": "A naturalist identifies a camel in the wild.", "text_b": "Researchers classify it as a mammal associated with the arid desert.", "label": 1}
+{"text_a": "A naturalist identifies a penguin in the wild.", "text_b": "Researchers classify it as a bird associated with the cold coast.", "label": 1}
+{"text_a": "A naturalist identifies a owl in the wild.", "text_b": "Researchers classify it as a bird associated with the woodland.", "label": 1}
+{"text_a": "A naturalist identifies a frog in the wild.", "text_b": "Researchers classify it as a amphibian associated with the freshwater wetland.", "label": 1}
+{"text_a": "A naturalist identifies a turtle in the wild.", "text_b": "Researchers classify it as a reptile associated with the warm coast.", "label": 1}
+{"text_a": "A naturalist identifies a bee in the wild.", "text_b": "Researchers classify it as a insect associated with the flowering meadow.", "label": 1}
+{"text_a": "A naturalist identifies a wolf in the wild.", "text_b": "Researchers classify it as a mammal associated with the temperate forest.", "label": 1}
+{"text_a": "A naturalist identifies a dolphin in the wild.", "text_b": "Researchers classify it as a mammal associated with the open ocean.", "label": 1}
+{"text_a": "A naturalist identifies a eagle in the wild.", "text_b": "Researchers classify it as a bird associated with the rocky mountain.", "label": 1}
+{"text_a": "A naturalist identifies a beaver in the wild.", "text_b": "Researchers classify it as a mammal associated with the woodland stream.", "label": 1}
+{"text_a": "A naturalist identifies a octopus in the wild.", "text_b": "Researchers classify it as a mollusk associated with the rocky reef.", "label": 1}
+{"text_a": "The tracked otter moves through the river.", "text_b": "This mammal is known because it uses stones as tools.", "label": 1}
+{"text_a": "The tracked camel moves through the arid desert.", "text_b": "This mammal is known because it conserves water efficiently.", "label": 1}
+{"text_a": "The tracked penguin moves through the cold coast.", "text_b": "This bird is known because it swims using flippers.", "label": 1}
+{"text_a": "The tracked owl moves through the woodland.", "text_b": "This bird is known because it flies almost silently.", "label": 1}
+{"text_a": "The tracked frog moves through the freshwater wetland.", "text_b": "This amphibian is known because it develops from a tadpole.", "label": 1}
+{"text_a": "The tracked turtle moves through the warm coast.", "text_b": "This reptile is known because it has a protective shell.", "label": 1}
+{"text_a": "The tracked bee moves through the flowering meadow.", "text_b": "This insect is known because it pollinates many plants.", "label": 1}
+{"text_a": "The tracked wolf moves through the temperate forest.", "text_b": "This mammal is known because it hunts cooperatively.", "label": 1}
+{"text_a": "The tracked dolphin moves through the open ocean.", "text_b": "This mammal is known because it communicates with whistles.", "label": 1}
+{"text_a": "The tracked eagle moves through the rocky mountain.", "text_b": "This bird is known because it soars on thermal currents.", "label": 1}
+{"text_a": "The tracked beaver moves through the woodland stream.", "text_b": "This mammal is known because it builds dams from branches.", "label": 1}
+{"text_a": "The tracked octopus moves through the rocky reef.", "text_b": "This mollusk is known because it changes color for camouflage.", "label": 1}
+{"text_a": "Scientists document how a otter finds food.", "text_b": "The animal is a mammal that commonly eats fish and shellfish.", "label": 1}
+{"text_a": "Scientists document how a camel finds food.", "text_b": "The animal is a mammal that commonly eats thorny shrubs.", "label": 1}
+{"text_a": "Scientists document how a penguin finds food.", "text_b": "The animal is a bird that commonly eats krill and fish.", "label": 1}
+{"text_a": "Scientists document how a owl finds food.", "text_b": "The animal is a bird that commonly eats mice and insects.", "label": 1}
+{"text_a": "Scientists document how a frog finds food.", "text_b": "The animal is a amphibian that commonly eats small insects.", "label": 1}
+{"text_a": "Scientists document how a turtle finds food.", "text_b": "The animal is a reptile that commonly eats seagrass and algae.", "label": 1}
+{"text_a": "Scientists document how a bee finds food.", "text_b": "The animal is a insect that commonly eats nectar and pollen.", "label": 1}
+{"text_a": "Scientists document how a wolf finds food.", "text_b": "The animal is a mammal that commonly eats deer and rabbits.", "label": 1}
+{"text_a": "Scientists document how a dolphin finds food.", "text_b": "The animal is a mammal that commonly eats fish and squid.", "label": 1}
+{"text_a": "Scientists document how a eagle finds food.", "text_b": "The animal is a bird that commonly eats small mammals.", "label": 1}
+{"text_a": "Scientists document how a beaver finds food.", "text_b": "The animal is a mammal that commonly eats bark and aquatic plants.", "label": 1}
+{"text_a": "Scientists document how a octopus finds food.", "text_b": "The animal is a mollusk that commonly eats crabs and mollusks.", "label": 1}
+{"text_a": "A conservation team monitors a otter population.", "text_b": "It occupies the river and uses stones as tools.", "label": 1}
+{"text_a": "A conservation team monitors a camel population.", "text_b": "It occupies the arid desert and conserves water efficiently.", "label": 1}
+{"text_a": "A conservation team monitors a penguin population.", "text_b": "It occupies the cold coast and swims using flippers.", "label": 1}
+{"text_a": "A conservation team monitors a owl population.", "text_b": "It occupies the woodland and flies almost silently.", "label": 1}
+{"text_a": "A researcher watches a otter in the river.", "text_b": "Observers recognize this insect by how it pollinates many plants.", "label": 0}
+{"text_a": "A researcher watches a camel in the arid desert.", "text_b": "Observers recognize this mammal by how it hunts cooperatively.", "label": 0}
+{"text_a": "A researcher watches a penguin in the cold coast.", "text_b": "Observers recognize this mammal by how it communicates with whistles.", "label": 0}
+{"text_a": "A researcher watches a owl in the woodland.", "text_b": "Observers recognize this bird by how it soars on thermal currents.", "label": 0}
+{"text_a": "A researcher watches a frog in the freshwater wetland.", "text_b": "Observers recognize this mammal by how it builds dams from branches.", "label": 0}
+{"text_a": "A researcher watches a turtle in the warm coast.", "text_b": "Observers recognize this mollusk by how it changes color for camouflage.", "label": 0}
+{"text_a": "A researcher watches a bee in the flowering meadow.", "text_b": "Observers recognize this mammal by how it uses stones as tools.", "label": 0}
+{"text_a": "A researcher watches a wolf in the temperate forest.", "text_b": "Observers recognize this mammal by how it conserves water efficiently.", "label": 0}
+{"text_a": "A researcher watches a dolphin in the open ocean.", "text_b": "Observers recognize this bird by how it swims using flippers.", "label": 0}
+{"text_a": "A researcher watches a eagle in the rocky mountain.", "text_b": "Observers recognize this bird by how it flies almost silently.", "label": 0}
+{"text_a": "A researcher watches a beaver in the woodland stream.", "text_b": "Observers recognize this amphibian by how it develops from a tadpole.", "label": 0}
+{"text_a": "A researcher watches a octopus in the rocky reef.", "text_b": "Observers recognize this reptile by how it has a protective shell.", "label": 0}
+{"text_a": "The otter searches its habitat for fish and shellfish.", "text_b": "Its diet includes deer and rabbits, and it lives near the temperate forest.", "label": 0}
+{"text_a": "The camel searches its habitat for thorny shrubs.", "text_b": "Its diet includes fish and squid, and it lives near the open ocean.", "label": 0}
+{"text_a": "The penguin searches its habitat for krill and fish.", "text_b": "Its diet includes small mammals, and it lives near the rocky mountain.", "label": 0}
+{"text_a": "The owl searches its habitat for mice and insects.", "text_b": "Its diet includes bark and aquatic plants, and it lives near the woodland stream.", "label": 0}
+{"text_a": "The frog searches its habitat for small insects.", "text_b": "Its diet includes crabs and mollusks, and it lives near the rocky reef.", "label": 0}
+{"text_a": "The turtle searches its habitat for seagrass and algae.", "text_b": "Its diet includes fish and shellfish, and it lives near the river.", "label": 0}
+{"text_a": "The bee searches its habitat for nectar and pollen.", "text_b": "Its diet includes thorny shrubs, and it lives near the arid desert.", "label": 0}
+{"text_a": "The wolf searches its habitat for deer and rabbits.", "text_b": "Its diet includes krill and fish, and it lives near the cold coast.", "label": 0}
+{"text_a": "The dolphin searches its habitat for fish and squid.", "text_b": "Its diet includes mice and insects, and it lives near the woodland.", "label": 0}
+{"text_a": "The eagle searches its habitat for small mammals.", "text_b": "Its diet includes small insects, and it lives near the freshwater wetland.", "label": 0}
+{"text_a": "The beaver searches its habitat for bark and aquatic plants.", "text_b": "Its diet includes seagrass and algae, and it lives near the warm coast.", "label": 0}
+{"text_a": "The octopus searches its habitat for crabs and mollusks.", "text_b": "Its diet includes nectar and pollen, and it lives near the flowering meadow.", "label": 0}
+{"text_a": "Field notes describe a otter near the river.", "text_b": "The species survives in the open ocean and communicates with whistles.", "label": 0}
+{"text_a": "Field notes describe a camel near the arid desert.", "text_b": "The species survives in the rocky mountain and soars on thermal currents.", "label": 0}
+{"text_a": "Field notes describe a penguin near the cold coast.", "text_b": "The species survives in the woodland stream and builds dams from branches.", "label": 0}
+{"text_a": "Field notes describe a owl near the woodland.", "text_b": "The species survives in the rocky reef and changes color for camouflage.", "label": 0}
+{"text_a": "Field notes describe a frog near the freshwater wetland.", "text_b": "The species survives in the river and uses stones as tools.", "label": 0}
+{"text_a": "Field notes describe a turtle near the warm coast.", "text_b": "The species survives in the arid desert and conserves water efficiently.", "label": 0}
+{"text_a": "Field notes describe a bee near the flowering meadow.", "text_b": "The species survives in the cold coast and swims using flippers.", "label": 0}
+{"text_a": "Field notes describe a wolf near the temperate forest.", "text_b": "The species survives in the woodland and flies almost silently.", "label": 0}
+{"text_a": "Field notes describe a dolphin near the open ocean.", "text_b": "The species survives in the freshwater wetland and develops from a tadpole.", "label": 0}
+{"text_a": "Field notes describe a eagle near the rocky mountain.", "text_b": "The species survives in the warm coast and has a protective shell.", "label": 0}
+{"text_a": "Field notes describe a beaver near the woodland stream.", "text_b": "The species survives in the flowering meadow and pollinates many plants.", "label": 0}
+{"text_a": "Field notes describe a octopus near the rocky reef.", "text_b": "The species survives in the temperate forest and hunts cooperatively.", "label": 0}
+{"text_a": "A wildlife camera records a otter at dusk.", "text_b": "This wild bird often feeds on small mammals.", "label": 0}
+{"text_a": "A wildlife camera records a camel at dusk.", "text_b": "This wild mammal often feeds on bark and aquatic plants.", "label": 0}
+{"text_a": "A wildlife camera records a penguin at dusk.", "text_b": "This wild mollusk often feeds on crabs and mollusks.", "label": 0}
+{"text_a": "A wildlife camera records a owl at dusk.", "text_b": "This wild mammal often feeds on fish and shellfish.", "label": 0}
+{"text_a": "A wildlife camera records a frog at dusk.", "text_b": "This wild mammal often feeds on thorny shrubs.", "label": 0}
+{"text_a": "A wildlife camera records a turtle at dusk.", "text_b": "This wild bird often feeds on krill and fish.", "label": 0}
+{"text_a": "A wildlife camera records a bee at dusk.", "text_b": "This wild bird often feeds on mice and insects.", "label": 0}
+{"text_a": "A wildlife camera records a wolf at dusk.", "text_b": "This wild amphibian often feeds on small insects.", "label": 0}
+{"text_a": "A wildlife camera records a dolphin at dusk.", "text_b": "This wild reptile often feeds on seagrass and algae.", "label": 0}
+{"text_a": "A wildlife camera records a eagle at dusk.", "text_b": "This wild insect often feeds on nectar and pollen.", "label": 0}
+{"text_a": "A wildlife camera records a beaver at dusk.", "text_b": "This wild mammal often feeds on deer and rabbits.", "label": 0}
+{"text_a": "A wildlife camera records a octopus at dusk.", "text_b": "This wild mammal often feeds on fish and squid.", "label": 0}
+{"text_a": "This observation follows a otter feeding on fish and shellfish.", "text_b": "A typical individual builds dams from branches in its natural range.", "label": 0}
+{"text_a": "This observation follows a camel feeding on thorny shrubs.", "text_b": "A typical individual changes color for camouflage in its natural range.", "label": 0}
+{"text_a": "This observation follows a penguin feeding on krill and fish.", "text_b": "A typical individual uses stones as tools in its natural range.", "label": 0}
+{"text_a": "This observation follows a owl feeding on mice and insects.", "text_b": "A typical individual conserves water efficiently in its natural range.", "label": 0}
+{"text_a": "This observation follows a frog feeding on small insects.", "text_b": "A typical individual swims using flippers in its natural range.", "label": 0}
+{"text_a": "This observation follows a turtle feeding on seagrass and algae.", "text_b": "A typical individual flies almost silently in its natural range.", "label": 0}
+{"text_a": "This observation follows a bee feeding on nectar and pollen.", "text_b": "A typical individual develops from a tadpole in its natural range.", "label": 0}
+{"text_a": "This observation follows a wolf feeding on deer and rabbits.", "text_b": "A typical individual has a protective shell in its natural range.", "label": 0}
+{"text_a": "This observation follows a dolphin feeding on fish and squid.", "text_b": "A typical individual pollinates many plants in its natural range.", "label": 0}
+{"text_a": "This observation follows a eagle feeding on small mammals.", "text_b": "A typical individual hunts cooperatively in its natural range.", "label": 0}
+{"text_a": "This observation follows a beaver feeding on bark and aquatic plants.", "text_b": "A typical individual communicates with whistles in its natural range.", "label": 0}
+{"text_a": "This observation follows a octopus feeding on crabs and mollusks.", "text_b": "A typical individual soars on thermal currents in its natural range.", "label": 0}
+{"text_a": "A naturalist identifies a otter in the wild.", "text_b": "Researchers classify it as a mollusk associated with the rocky reef.", "label": 0}
+{"text_a": "A naturalist identifies a camel in the wild.", "text_b": "Researchers classify it as a mammal associated with the river.", "label": 0}
+{"text_a": "A naturalist identifies a penguin in the wild.", "text_b": "Researchers classify it as a mammal associated with the arid desert.", "label": 0}
+{"text_a": "A naturalist identifies a owl in the wild.", "text_b": "Researchers classify it as a bird associated with the cold coast.", "label": 0}
+{"text_a": "A naturalist identifies a frog in the wild.", "text_b": "Researchers classify it as a bird associated with the woodland.", "label": 0}
+{"text_a": "A naturalist identifies a turtle in the wild.", "text_b": "Researchers classify it as a amphibian associated with the freshwater wetland.", "label": 0}
+{"text_a": "A naturalist identifies a bee in the wild.", "text_b": "Researchers classify it as a reptile associated with the warm coast.", "label": 0}
+{"text_a": "A naturalist identifies a wolf in the wild.", "text_b": "Researchers classify it as a insect associated with the flowering meadow.", "label": 0}
+{"text_a": "A naturalist identifies a dolphin in the wild.", "text_b": "Researchers classify it as a mammal associated with the temperate forest.", "label": 0}
+{"text_a": "A naturalist identifies a eagle in the wild.", "text_b": "Researchers classify it as a mammal associated with the open ocean.", "label": 0}
+{"text_a": "A naturalist identifies a beaver in the wild.", "text_b": "Researchers classify it as a bird associated with the rocky mountain.", "label": 0}
+{"text_a": "A naturalist identifies a octopus in the wild.", "text_b": "Researchers classify it as a mammal associated with the woodland stream.", "label": 0}
+{"text_a": "The tracked otter moves through the river.", "text_b": "This mammal is known because it conserves water efficiently.", "label": 0}
+{"text_a": "The tracked camel moves through the arid desert.", "text_b": "This bird is known because it swims using flippers.", "label": 0}
+{"text_a": "The tracked penguin moves through the cold coast.", "text_b": "This bird is known because it flies almost silently.", "label": 0}
+{"text_a": "The tracked owl moves through the woodland.", "text_b": "This amphibian is known because it develops from a tadpole.", "label": 0}
+{"text_a": "The tracked frog moves through the freshwater wetland.", "text_b": "This reptile is known because it has a protective shell.", "label": 0}
+{"text_a": "The tracked turtle moves through the warm coast.", "text_b": "This insect is known because it pollinates many plants.", "label": 0}
+{"text_a": "The tracked bee moves through the flowering meadow.", "text_b": "This mammal is known because it hunts cooperatively.", "label": 0}
+{"text_a": "The tracked wolf moves through the temperate forest.", "text_b": "This mammal is known because it communicates with whistles.", "label": 0}
+{"text_a": "The tracked dolphin moves through the open ocean.", "text_b": "This bird is known because it soars on thermal currents.", "label": 0}
+{"text_a": "The tracked eagle moves through the rocky mountain.", "text_b": "This mammal is known because it builds dams from branches.", "label": 0}
+{"text_a": "The tracked beaver moves through the woodland stream.", "text_b": "This mollusk is known because it changes color for camouflage.", "label": 0}
+{"text_a": "The tracked octopus moves through the rocky reef.", "text_b": "This mammal is known because it uses stones as tools.", "label": 0}
+{"text_a": "Scientists document how a otter finds food.", "text_b": "The animal is a bird that commonly eats krill and fish.", "label": 0}
+{"text_a": "Scientists document how a camel finds food.", "text_b": "The animal is a bird that commonly eats mice and insects.", "label": 0}
+{"text_a": "Scientists document how a penguin finds food.", "text_b": "The animal is a amphibian that commonly eats small insects.", "label": 0}
+{"text_a": "Scientists document how a owl finds food.", "text_b": "The animal is a reptile that commonly eats seagrass and algae.", "label": 0}
+{"text_a": "Scientists document how a frog finds food.", "text_b": "The animal is a insect that commonly eats nectar and pollen.", "label": 0}
+{"text_a": "Scientists document how a turtle finds food.", "text_b": "The animal is a mammal that commonly eats deer and rabbits.", "label": 0}
+{"text_a": "Scientists document how a bee finds food.", "text_b": "The animal is a mammal that commonly eats fish and squid.", "label": 0}
+{"text_a": "Scientists document how a wolf finds food.", "text_b": "The animal is a bird that commonly eats small mammals.", "label": 0}
+{"text_a": "Scientists document how a dolphin finds food.", "text_b": "The animal is a mammal that commonly eats bark and aquatic plants.", "label": 0}
+{"text_a": "Scientists document how a eagle finds food.", "text_b": "The animal is a mollusk that commonly eats crabs and mollusks.", "label": 0}
+{"text_a": "Scientists document how a beaver finds food.", "text_b": "The animal is a mammal that commonly eats fish and shellfish.", "label": 0}
+{"text_a": "Scientists document how a octopus finds food.", "text_b": "The animal is a mammal that commonly eats thorny shrubs.", "label": 0}
+{"text_a": "A conservation team monitors a otter population.", "text_b": "It occupies the woodland and flies almost silently.", "label": 0}
+{"text_a": "A conservation team monitors a camel population.", "text_b": "It occupies the freshwater wetland and develops from a tadpole.", "label": 0}
+{"text_a": "A conservation team monitors a penguin population.", "text_b": "It occupies the warm coast and has a protective shell.", "label": 0}
+{"text_a": "A conservation team monitors a owl population.", "text_b": "It occupies the flowering meadow and pollinates many plants.", "label": 0}
